@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HomePhotoGallery } from "@/components/home/HomePhotoGallery";
 
 const homePhotos = [
   {
@@ -46,7 +47,7 @@ const homePhotos = [
 export default function HomePage() {
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16">
-      <section className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center">
+      <section className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center mb-6">
         <div>
           <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
             Inicio
@@ -94,28 +95,12 @@ export default function HomePage() {
             Galería fotográfica
           </p>
 
-          <h2 className="text-3xl font-semibold tracking-tight text-(--color-text)">
+          <h2 className="text-3xl font-semibold tracking-tight text-(--color-text) mb-12">
             Fotografías de Rafael Mateos
           </h2>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {homePhotos.map((photo) => (
-            <button
-              key={photo.id}
-              type="button"
-              className="group overflow-hidden rounded-2xl border-2 border-(--color-border)/60 shadow-lg shadow-black/30 transition hover:border-(--color-border-accent) hover:shadow-black/50"
-            >
-              <Image
-                src={photo.src}
-                alt={photo.alt}
-                width={800}
-                height={600}
-                className="aspect-4/3 w-full object-cover transition duration-300 group-hover:scale-102"
-              />
-            </button>
-          ))}
-        </div>
+        <HomePhotoGallery photos={homePhotos} />
       </section>
     </section>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Photo = {
   id: string;
@@ -9,14 +9,30 @@ type Photo = {
   alt: string;
 };
 
-type HomePhotoGalleryProps = {
+type PhotoGalleryProps = {
   photos: Photo[];
 };
 
-export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
+const INITIAL_VISIBLE_PHOTOS = 8;
+const PHOTOS_PER_LOAD = 8;
+
+export function PhotoGallery({ photos }: PhotoGalleryProps) {
+  const [visiblePhotoCount, setVisiblePhotoCount] = useState(
+    INITIAL_VISIBLE_PHOTOS,
+  );
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
     null,
   );
+
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
+
+  const visiblePhotos = photos.slice(0, visiblePhotoCount);
+  const hasMorePhotos = visiblePhotoCount < photos.length;
+
+  const selectedPhoto =
+    selectedPhotoIndex === null ? null : visiblePhotos[selectedPhotoIndex];
+
+  const isLightboxOpen = selectedPhotoIndex !== null;
 
   function openPhoto(index: number) {
     setSelectedPhotoIndex(index);
@@ -30,22 +46,48 @@ export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
     setSelectedPhotoIndex((currentIndex) => {
       if (currentIndex === null) return currentIndex;
 
-      return currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
+      return currentIndex === 0 ? visiblePhotos.length - 1 : currentIndex - 1;
     });
-  }, [photos.length]);
+  }, [visiblePhotos.length]);
 
   const showNextPhoto = useCallback(() => {
     setSelectedPhotoIndex((currentIndex) => {
       if (currentIndex === null) return currentIndex;
 
-      return currentIndex === photos.length - 1 ? 0 : currentIndex + 1;
+      return currentIndex === visiblePhotos.length - 1 ? 0 : currentIndex + 1;
     });
-  }, [photos.length]);
+  }, [visiblePhotos.length]);
 
-  const isLightboxOpen = selectedPhotoIndex !== null;
+  useEffect(() => {
+    if (!hasMorePhotos) return;
 
-  const selectedPhoto =
-    selectedPhotoIndex === null ? null : photos[selectedPhotoIndex];
+    const triggerElement = loadMoreTriggerRef.current;
+
+    if (!triggerElement) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+
+        if (!entry.isIntersecting) return;
+
+        setVisiblePhotoCount((currentCount) =>
+          Math.min(currentCount + PHOTOS_PER_LOAD, photos.length),
+        );
+      },
+      {
+        root: null,
+        rootMargin: "300px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(triggerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMorePhotos, photos.length]);
 
   useEffect(() => {
     if (!isLightboxOpen) return;
@@ -93,14 +135,14 @@ export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
   }, [isLightboxOpen, closePhoto, showPreviousPhoto, showNextPhoto]);
 
   return (
-    <>
+    <section>
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {photos.map((photo, index) => (
+        {visiblePhotos.map((photo, index) => (
           <button
             key={photo.id}
             type="button"
             onClick={() => openPhoto(index)}
-            className="group overflow-hidden rounded-2xl border-2 border-(--color-border)/60 shadow-lg shadow-black/30 transition hover:border-(--color-border-accent)"
+            className="group overflow-hidden border-2 border-(--color-border)/60 bg-(--color-surface) shadow-lg shadow-black/30 transition hover:border-(--color-border-accent)"
           >
             <Image
               src={photo.src}
@@ -112,6 +154,10 @@ export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
           </button>
         ))}
       </div>
+
+      {hasMorePhotos && (
+        <div ref={loadMoreTriggerRef} className="h-12" aria-hidden="true" />
+      )}
 
       {selectedPhoto && (
         <div
@@ -149,7 +195,7 @@ export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
               alt={selectedPhoto.alt}
               width={1600}
               height={1200}
-              className="max-h-[90vh] w-auto rounded-2xl object-contain shadow-2xl shadow-black/70"
+              className="max-h-[90vh] w-auto object-contain shadow-2xl shadow-black/70"
               priority
             />
           </div>
@@ -167,6 +213,6 @@ export function HomePhotoGallery({ photos }: HomePhotoGalleryProps) {
           </button>
         </div>
       )}
-    </>
+    </section>
   );
 }

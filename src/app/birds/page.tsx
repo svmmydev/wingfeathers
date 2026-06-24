@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { birds } from "@/data/birds";
 
 export default function BirdsPage() {
   return (
@@ -13,23 +15,42 @@ export default function BirdsPage() {
         </h1>
 
         <p className="mt-4 max-w-3xl text-lg leading-8 text-(--color-text-muted)">
-          Aquí aparecerá el listado de especies fotografiadas.
+          Consulta las especies fotografiadas y accede a sus fichas con
+          información biológica, comportamiento, alimentación, hábitat y galería
+          asociada.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Link
-          href="/birds/example-bird"
-          className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 transition hover:border-(--color-accent)"
-        >
-          <h2 className="text-xl font-semibold text-(--color-text)">
-            Ave de ejemplo
-          </h2>
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {birds.map((bird) => {
+          const coverPhoto = bird.photos[0];
 
-          <p className="mt-2 text-sm text-(--color-text-muted)">
-            Esta tarjeta es temporal para probar la navegación.
-          </p>
-        </Link>
+          return (
+            <Link
+              key={bird.id}
+              href={`/birds/${bird.slug}`}
+              className="group overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-lg shadow-black/25 transition hover:border-(--color-border-accent)"
+            >
+              <Image
+                src={coverPhoto.src}
+                alt={coverPhoto.alt}
+                width={400}
+                height={300}
+                className="aspect-4/3 w-full object-cover"
+              />
+
+              <div className="p-3">
+                <h2 className="text-xl font-semibold text-(--color-text)">
+                  {bird.commonName}
+                </h2>
+
+                <p className="mt-1 text-sm italic text-(--color-text-muted)">
+                  {bird.scientificName}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

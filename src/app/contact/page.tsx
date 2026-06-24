@@ -1,6 +1,6 @@
 export default function ContactPage() {
   return (
-    <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-16">
+    <section className="mx-auto flex max-w-7xl flex-col gap-8 px-8 py-16">
       <div className="max-w-3xl">
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
           Contacto

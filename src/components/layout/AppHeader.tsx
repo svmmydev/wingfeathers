@@ -4,7 +4,7 @@ import Link from "next/link";
 export function AppHeader() {
   return (
     <header className="relative z-10 bg-(--color-background) shadow-lg shadow-black/30">
-      <div className="mx-auto grid max-w-6xl grid-cols-3 items-center px-6 pt-6 pb-8">
+      <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-6 pt-6 pb-8">
         <div className="flex justify-start">
           <span className="text-sm font-medium tracking-wide text-(--color-text-muted)">
             Rafael Mateos

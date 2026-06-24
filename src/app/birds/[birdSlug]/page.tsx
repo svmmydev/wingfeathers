@@ -6,7 +6,7 @@ type BirdDetailPageProps = {
 
 export default function BirdDetailPage({ params }: BirdDetailPageProps) {
   return (
-    <section className="mx-auto grid max-w-6xl gap-8 px-6 py-16 lg:grid-cols-[1fr_320px]">
+    <section className="mx-auto grid max-w-7xl gap-8 px-8 py-16 lg:grid-cols-[1fr_320px]">
       <div>
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
           Ficha de ave
@@ -16,7 +16,9 @@ export default function BirdDetailPage({ params }: BirdDetailPageProps) {
           {params.birdSlug}
         </h1>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="aspect-4/3 rounded-2xl border border-(--color-border) bg-(--color-surface)" />
+          <div className="aspect-4/3 rounded-2xl border border-(--color-border) bg-(--color-surface)" />
           <div className="aspect-4/3 rounded-2xl border border-(--color-border) bg-(--color-surface)" />
           <div className="aspect-4/3 rounded-2xl border border-(--color-border) bg-(--color-surface)" />
           <div className="aspect-4/3 rounded-2xl border border-(--color-border) bg-(--color-surface)" />

@@ -1,5 +1,48 @@
 import Image from "next/image";
 
+const homePhotos = [
+  {
+    id: "bird-01",
+    src: "/gallery/calamon.jpg",
+    alt: "Fotografía de ave 1",
+  },
+  {
+    id: "bird-02",
+    src: "/gallery/garcilla-cangrejera.jpg",
+    alt: "Fotografía de ave 2",
+  },
+  {
+    id: "bird-03",
+    src: "/gallery/zampullin-chico.jpg",
+    alt: "Fotografía de ave 3",
+  },
+  {
+    id: "bird-04",
+    src: "/gallery/calamon.jpg",
+    alt: "Fotografía de ave 4",
+  },
+  {
+    id: "bird-05",
+    src: "/gallery/garcilla-cangrejera.jpg",
+    alt: "Fotografía de ave 5",
+  },
+  {
+    id: "bird-06",
+    src: "/gallery/zampullin-chico.jpg",
+    alt: "Fotografía de ave 6",
+  },
+  {
+    id: "bird-07",
+    src: "/gallery/calamon.jpg",
+    alt: "Fotografía de ave 6",
+  },
+  {
+    id: "bird-08",
+    src: "/gallery/garcilla-cangrejera.jpg",
+    alt: "Fotografía de ave 6",
+  },
+];
+
 export default function HomePage() {
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16">
@@ -33,7 +76,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="w-full max-w-xs justify-self-center overflow-hidden rounded-2xl border-2 border-(--color-border) bg-(--color-surface) sm:max-w-sm lg:max-w-none shadow-lg shadow-black/40">
+        <div className="w-full max-w-xs justify-self-center overflow-hidden rounded-2xl border-2 border-(--color-border)/60 sm:max-w-sm lg:max-w-none shadow-lg shadow-black/40">
           <Image
             src="/brand/rafael-mateos.jpeg"
             alt="Rafael Mateos"
@@ -48,23 +91,30 @@ export default function HomePage() {
       <section>
         <div className="mb-6 text-center">
           <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
-            Selección fotográfica
+            Galería fotográfica
           </p>
 
           <h2 className="text-3xl font-semibold tracking-tight text-(--color-text)">
-            Imágenes favoritas
+            Fotografías de Rafael Mateos
           </h2>
-
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-(--color-text-muted)">
-            Aquí mostraremos una selección de fotografías destacadas. Más
-            adelante este bloque será un carrusel.
-          </p>
         </div>
 
-        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-3">
-          <div className="aspect-4/3 rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface)" />
-          <div className="aspect-4/3 rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface)" />
-          <div className="aspect-4/3 rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface)" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {homePhotos.map((photo) => (
+            <button
+              key={photo.id}
+              type="button"
+              className="group overflow-hidden rounded-2xl border-2 border-(--color-border)/60 shadow-lg shadow-black/30 transition hover:border-(--color-border-accent) hover:shadow-black/50"
+            >
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                width={800}
+                height={600}
+                className="aspect-4/3 w-full object-cover transition duration-300 group-hover:scale-102"
+              />
+            </button>
+          ))}
         </div>
       </section>
     </section>

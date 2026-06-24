@@ -17,7 +17,7 @@ export default function RootLayout({
       <body>
         <AppHeader />
 
-        <main className="min-h-screen bg-(--color-background) text-(--color-text)">
+        <main className="min-h-screen bg-(--color-background-body) text-(--color-text)">
           {children}
         </main>
       </body>

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { AppHeader } from "@/components/layout/AppHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "WingFeathers",
-  description:
-    "Enciclopedia visual de aves fotografiadas, con información biológica y datos de observación.",
+  description: "Galería ornitológica de Rafael Mateos.",
 };
 
 export default function RootLayout({
@@ -14,7 +14,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <AppHeader />
+
+        <main className="min-h-screen bg-(--color-background) text-(--color-text)">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

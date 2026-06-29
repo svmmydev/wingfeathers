@@ -36,11 +36,11 @@ export default function BirdsPage() {
                 alt={coverPhoto.alt}
                 width={400}
                 height={300}
-                className="aspect-4/3 w-full object-cover"
+                className="aspect-3/2 w-full object-cover"
               />
 
               <div className="p-3">
-                <h2 className="text-xl font-semibold text-(--color-text)">
+                <h2 className="text-lg leading-tight font-semibold text-(--color-text)">
                   {bird.commonName}
                 </h2>
 

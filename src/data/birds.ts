@@ -2,6 +2,7 @@ export type BirdPhoto = {
   id: string;
   src: string;
   alt: string;
+  uploadedAt: string;
 };
 
 export type Bird = {
@@ -45,6 +46,7 @@ export const birds: Bird[] = [
         id: "calamon-01",
         src: "/gallery/calamon.jpg",
         alt: "Calamón común fotografiado en zona húmeda",
+        uploadedAt: "2026-06-25T18:00:00.000Z",
       },
     ],
   },
@@ -72,6 +74,7 @@ export const birds: Bird[] = [
         id: "garcilla-cangrejera-01",
         src: "/gallery/garcilla-cangrejera.jpg",
         alt: "Garcilla cangrejera junto al agua",
+        uploadedAt: "2026-06-27T18:00:00.000Z",
       },
     ],
   },
@@ -98,6 +101,7 @@ export const birds: Bird[] = [
         id: "zampullin-chico-01",
         src: "/gallery/zampullin-chico.jpg",
         alt: "Zampullín chico nadando en el agua",
+        uploadedAt: "2026-06-28T18:00:00.000Z",
       },
     ],
   },

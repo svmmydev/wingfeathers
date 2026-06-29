@@ -1,22 +1,30 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Photo = {
   id: string;
   src: string;
   alt: string;
+  birdSlug?: string;
+  birdCommonName?: string;
+  birdScientificName?: string;
 };
 
 type PhotoGalleryProps = {
   photos: Photo[];
+  showPhotoInfo?: boolean;
 };
 
 const INITIAL_VISIBLE_PHOTOS = 8;
 const PHOTOS_PER_LOAD = 8;
 
-export function PhotoGallery({ photos }: PhotoGalleryProps) {
+export function PhotoGallery({
+  photos,
+  showPhotoInfo = false,
+}: PhotoGalleryProps) {
   const [visiblePhotoCount, setVisiblePhotoCount] = useState(
     INITIAL_VISIBLE_PHOTOS,
   );
@@ -195,9 +203,30 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
               alt={selectedPhoto.alt}
               width={1600}
               height={1200}
-              className="max-h-[90vh] w-auto object-contain shadow-2xl shadow-black/70"
+              className="max-h-[75vh] w-auto object-contain shadow-2xl shadow-black/70"
               priority
             />
+
+            {showPhotoInfo && selectedPhoto.birdSlug && (
+              <div className="mt-4 flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-left">
+                  <p className="text-lg font-semibold text-white">
+                    {selectedPhoto.birdCommonName}
+                  </p>
+
+                  <p className="mt-1 text-sm italic text-white/70">
+                    {selectedPhoto.birdScientificName}
+                  </p>
+                </div>
+
+                <Link
+                  href={`/birds/${selectedPhoto.birdSlug}`}
+                  className="inline-flex w-fit rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+                >
+                  Ver ficha del ave
+                </Link>
+              </div>
+            )}
           </div>
 
           <button

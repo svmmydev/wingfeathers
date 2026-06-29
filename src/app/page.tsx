@@ -58,7 +58,7 @@ export default function HomePage() {
           </h2>
         </div>
 
-        <PhotoGallery photos={homePhotos} />
+        <PhotoGallery photos={homePhotos} showPhotoInfo={true} />
       </section>
     </section>
   );

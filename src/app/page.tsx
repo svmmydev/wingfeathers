@@ -4,7 +4,7 @@ import { PhotoGallery } from "@/components/gallery/PhotoGallery";
 
 export default function HomePage() {
   return (
-    <section className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-16">
+    <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
       <section className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center mb-6">
         <div>
           <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em]">
@@ -58,7 +58,7 @@ export default function HomePage() {
           </h2>
         </div>
 
-        <PhotoGallery photos={homePhotos} showPhotoInfo={true} />
+        <PhotoGallery photos={homePhotos} showPhotoInfo showBirdLink />
       </section>
     </section>
   );

@@ -37,7 +37,12 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
         </p>
 
         <div className="mt-8">
-          <PhotoGallery photos={bird.photos} />
+          <PhotoGallery
+            photos={bird.photos}
+            showPhotoInfo
+            birdCommonName={bird.commonName}
+            birdScientificName={bird.scientificName}
+          />
         </div>
       </div>
 

@@ -39,3 +39,42 @@ body {
   background: var(--color-brand);
   color: var(--color-background);
 }
+
+@keyframes lightbox-slide-in-from-right {
+  from {
+    opacity: 0.4;
+    transform: translateX(12%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes lightbox-slide-in-from-left {
+  from {
+    opacity: 0.4;
+    transform: translateX(-12%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.lightbox-slide-in-from-right {
+  animation: lightbox-slide-in-from-right 180ms ease-out both;
+}
+
+.lightbox-slide-in-from-left {
+  animation: lightbox-slide-in-from-left 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-slide-in-from-right,
+  .lightbox-slide-in-from-left {
+    animation: none;
+  }
+}

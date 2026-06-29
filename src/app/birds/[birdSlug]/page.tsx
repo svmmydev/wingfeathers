@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { birds } from "@/data/birds";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
+import { birds } from "@/data/birds";
 
 type BirdDetailPageProps = {
   params: Promise<{
@@ -41,7 +41,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
         </div>
       </div>
 
-      <aside className="h-fit rounded-2xl border border-(--color-border) bg-(--color-surface) p-6">
+      <aside className="h-fit rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 shadow-lg shadow-black/25">
         <h2 className="text-xl font-semibold text-(--color-text)">
           Información del ave
         </h2>

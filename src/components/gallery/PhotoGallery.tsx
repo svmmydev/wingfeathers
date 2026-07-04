@@ -27,6 +27,8 @@ type PhotoGalleryProps = {
   birdScientificName?: string;
 };
 
+type SlideDirection = "previous" | "next" | null;
+
 const INITIAL_VISIBLE_PHOTOS = 8;
 const PHOTOS_PER_LOAD = 8;
 
@@ -48,13 +50,9 @@ export function PhotoGallery({
     null,
   );
 
-  const [slideDirection, setSlideDirection] = useState<
-    "previous" | "next" | null
-  >(null);
+  const [slideDirection, setSlideDirection] = useState<SlideDirection>(null);
 
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
-
-  const lightboxImageRef = useRef<HTMLImageElement | null>(null);
 
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
@@ -64,7 +62,9 @@ export function PhotoGallery({
   const canNavigatePhotos = visiblePhotos.length > 1;
 
   const selectedPhoto =
-    selectedPhotoIndex === null ? null : visiblePhotos[selectedPhotoIndex];
+    selectedPhotoIndex === null
+      ? null
+      : (visiblePhotos[selectedPhotoIndex] ?? null);
 
   const selectedBirdCommonName =
     selectedPhoto?.birdCommonName ?? birdCommonName;
@@ -72,13 +72,13 @@ export function PhotoGallery({
   const selectedBirdScientificName =
     selectedPhoto?.birdScientificName ?? birdScientificName;
 
+  const selectedBirdSlug = selectedPhoto?.birdSlug;
+
   const shouldShowPhotoInfo =
     showPhotoInfo &&
     Boolean(selectedBirdCommonName || selectedBirdScientificName);
 
-  const selectedBirdSlug = selectedPhoto?.birdSlug;
-
-  const isLightboxOpen = selectedPhotoIndex !== null;
+  const isLightboxOpen = selectedPhoto !== null;
 
   const lightboxImageSizeClass = shouldShowPhotoInfo
     ? "max-h-[78svh] max-lg:landscape:max-h-[92svh] lg:max-h-[82vh]"
@@ -124,19 +124,26 @@ export function PhotoGallery({
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (!canNavigatePhotos) return;
-    if (event.pointerType === "mouse") return;
+    if (!canNavigatePhotos || event.pointerType === "mouse") {
+      resetPointerPosition();
+      return;
+    }
 
     pointerStartXRef.current = event.clientX;
     pointerStartYRef.current = event.clientY;
   }
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
-    if (!canNavigatePhotos) return;
+    if (!canNavigatePhotos) {
+      resetPointerPosition();
+      return;
+    }
+
     if (
       pointerStartXRef.current === null ||
       pointerStartYRef.current === null
     ) {
+      resetPointerPosition();
       return;
     }
 
@@ -262,11 +269,15 @@ export function PhotoGallery({
           className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/80 px-2 py-3 backdrop-blur-sm md:px-4 md:py-6 max-lg:landscape:px-1 max-lg:landscape:py-1"
           role="dialog"
           aria-modal="true"
+          aria-label="Visor de fotografía"
           onClick={closePhoto}
         >
           <button
             type="button"
-            onClick={closePhoto}
+            onClick={(event) => {
+              event.stopPropagation();
+              closePhoto();
+            }}
             className="absolute right-4 top-4 z-20 rounded-full border-2 border-(--color-border) bg-black/60 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
           >
             Cerrar
@@ -309,7 +320,6 @@ export function PhotoGallery({
                     }`}
                   >
                     <Image
-                      ref={lightboxImageRef}
                       src={selectedPhoto.src}
                       alt={selectedPhoto.alt}
                       width={1600}

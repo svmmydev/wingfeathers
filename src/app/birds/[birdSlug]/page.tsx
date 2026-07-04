@@ -18,7 +18,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
   }
 
   return (
-    <section className="mx-auto grid max-w-7xl gap-8 px-8 py-16 lg:grid-cols-[1fr_340px]">
+    <section className="mx-auto grid max-w-6xl gap-8 px-8 py-16 lg:grid-cols-[1fr_340px]">
       <div>
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
           Ficha de ave

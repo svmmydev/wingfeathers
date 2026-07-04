@@ -7,7 +7,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
   type PointerEvent,
 } from "react";
 

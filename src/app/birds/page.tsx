@@ -3,7 +3,7 @@ import { BirdsGrid } from "@/components/birds/BirdsGrid";
 
 export default function BirdsPage() {
   return (
-    <section className="mx-auto flex max-w-7xl flex-col gap-8 px-8 py-16">
+    <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
       <div>
         <p className="mb-3 text-sm font-medium uppercase tracking-[0.25em] text-(--color-accent)">
           Aves

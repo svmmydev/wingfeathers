@@ -1,10 +1,6 @@
 import { birds } from "@/data/birds";
 
 export type HomePhoto = {
-  id: string;
-  src: string;
-  alt: string;
-  uploadedAt: string;
   birdSlug: string;
   birdCommonName: string;
   birdScientificName: string;
@@ -13,10 +9,7 @@ export type HomePhoto = {
 export const homePhotos: HomePhoto[] = birds
   .flatMap((bird) =>
     bird.photos.map((photo) => ({
-      id: photo.id,
-      src: photo.src,
-      alt: photo.alt,
-      uploadedAt: photo.uploadedAt,
+      ...photo,
       birdSlug: bird.slug,
       birdCommonName: bird.commonName,
       birdScientificName: bird.scientificName,

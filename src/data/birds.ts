@@ -3,6 +3,9 @@ export type BirdPhoto = {
   src: string;
   alt: string;
   uploadedAt: string;
+  title?: string;
+  camera?: string;
+  lens?: string;
 };
 
 export type Bird = {
@@ -11,13 +14,14 @@ export type Bird = {
   commonName: string;
   scientificName: string;
   family: string;
+  isNative: boolean;
+  geography: string;
   description: string;
   habitat: string;
   feeding: string;
   behavior: string;
   breeding: string;
   size: string;
-  seasonality: string;
   photos: BirdPhoto[];
 };
 
@@ -28,6 +32,8 @@ export const birds: Bird[] = [
     commonName: "Calamón común",
     scientificName: "Porphyrio porphyrio",
     family: "Rallidae",
+    isNative: true,
+    geography: "...",
     description:
       "Ave acuática de plumaje azul violáceo intenso, pico rojo y patas largas. Suele encontrarse en humedales con abundante vegetación.",
     habitat:
@@ -39,8 +45,6 @@ export const birds: Bird[] = [
     breeding:
       "Cría en zonas húmedas, construyendo el nido entre vegetación palustre.",
     size: "Aproximadamente 45-50 cm de longitud.",
-    seasonality:
-      "Puede observarse durante gran parte del año en humedales adecuados.",
     photos: [
       {
         id: "calamon-01",
@@ -56,6 +60,8 @@ export const birds: Bird[] = [
     commonName: "Garcilla cangrejera",
     scientificName: "Ardeola ralloides",
     family: "Ardeidae",
+    isNative: true,
+    geography: "...",
     description:
       "Garza pequeña de tonos ocres y blancos, especialmente llamativa durante el vuelo por el contraste de sus alas claras.",
     habitat:
@@ -67,8 +73,6 @@ export const birds: Bird[] = [
     breeding:
       "Cría en colonias, normalmente junto a otras garzas, en vegetación próxima al agua.",
     size: "Aproximadamente 40-49 cm de longitud.",
-    seasonality:
-      "Más frecuente en época estival y durante pasos migratorios, según la zona.",
     photos: [
       {
         id: "garcilla-cangrejera-01",
@@ -84,6 +88,8 @@ export const birds: Bird[] = [
     commonName: "Zampullín chico",
     scientificName: "Tachybaptus ruficollis",
     family: "Podicipedidae",
+    isNative: true,
+    geography: "...",
     description:
       "Pequeña ave acuática buceadora, de cuerpo compacto y comportamiento discreto. Suele desaparecer bajo el agua con rapidez.",
     habitat:
@@ -94,8 +100,6 @@ export const birds: Bird[] = [
       "Bucea con frecuencia y puede ser difícil de observar durante mucho tiempo seguido.",
     breeding: "Construye nidos flotantes o sujetos a vegetación acuática.",
     size: "Aproximadamente 25-29 cm de longitud.",
-    seasonality:
-      "Presente todo el año en muchas zonas, aunque puede variar localmente.",
     photos: [
       {
         id: "zampullin-chico-01",

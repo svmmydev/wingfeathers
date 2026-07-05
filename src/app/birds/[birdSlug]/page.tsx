@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
-import { birds } from "@/data/birds";
+import { getBirdBySlug } from "@/lib/birds";
 
 type BirdDetailPageProps = {
   params: Promise<{
@@ -11,7 +11,7 @@ type BirdDetailPageProps = {
 export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
   const { birdSlug } = await params;
 
-  const bird = birds.find((currentBird) => currentBird.slug === birdSlug);
+  const bird = await getBirdBySlug(birdSlug);
 
   if (!bird) {
     notFound();
@@ -85,10 +85,9 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           </div>
 
           <div>
-            <dt className="font-semibold text-(--color-text)">Época del año</dt>
-            <dd className="mt-1 text-(--color-text-muted)">
-              {bird.seasonality}
-            </dd>
+            <dt className="font-semibold text-(--color-text)">Geografía</dt>
+            {/*TODO: Implementar la info de geography en los campos existentes de la base de datos*/}
+            <dd className="mt-1 text-(--color-text-muted)">{bird.geography}</dd>
           </div>
         </dl>
       </aside>

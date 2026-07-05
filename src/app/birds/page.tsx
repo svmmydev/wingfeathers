@@ -1,7 +1,9 @@
-import { birds } from "@/data/birds";
 import { BirdsGrid } from "@/components/birds/BirdsGrid";
+import { getBirds } from "@/lib/birds";
 
-export default function BirdsPage() {
+export default async function BirdsPage() {
+  const birds = await getBirds();
+
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
       <div>

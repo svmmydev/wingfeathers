@@ -1,8 +1,10 @@
 import Image from "next/image";
-import { homePhotos } from "@/data/home-photos";
+import { getHomePhotos } from "@/lib/birds";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const homePhotos = await getHomePhotos();
+
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
       <section className="grid gap-10 lg:grid-cols-[1fr_360px] lg:items-center mb-6">

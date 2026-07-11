@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Bird, BirdPhoto } from "@/data/birds";
+import type { Bird, BirdPhoto, HomePhoto } from "@/types/birds";
 
 type PhotoVariantRow = {
   variant_type: "card" | "large";
@@ -33,6 +33,23 @@ type BirdRow = {
   photos: PhotoRow[];
 };
 
+type HomeBirdRow = {
+  slug: string;
+  common_name: string;
+  scientific_name: string;
+};
+
+type HomePhotoRow = {
+  id: string;
+  title: string | null;
+  alt: string;
+  camera: string;
+  lens: string;
+  uploaded_at: string;
+  photo_variants: PhotoVariantRow[];
+  bird: HomeBirdRow | HomeBirdRow[] | null;
+};
+
 function mapPhoto(photo: PhotoRow): BirdPhoto {
   const cardVariant = photo.photo_variants.find(
     (variant) => variant.variant_type === "card",
@@ -45,7 +62,8 @@ function mapPhoto(photo: PhotoRow): BirdPhoto {
   return {
     id: photo.id,
     title: photo.title ?? undefined,
-    src: largeVariant?.public_url ?? cardVariant?.public_url ?? "",
+    src: cardVariant?.public_url ?? largeVariant?.public_url ?? "",
+    largeSrc: largeVariant?.public_url ?? cardVariant?.public_url,
     alt: photo.alt,
     uploadedAt: photo.uploaded_at,
     camera: photo.camera,
@@ -113,6 +131,9 @@ export async function getBirds(): Promise<Bird[]> {
     )
     .order("common_name", { ascending: true });
 
+  console.log("BIRDS DATA:", data);
+  console.log("BIRDS ERROR:", error);
+
   if (error) {
     throw new Error(error.message);
   }
@@ -168,29 +189,6 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   return mapBird(data as BirdRow);
 }
 
-export type HomePhoto = BirdPhoto & {
-  birdSlug: string;
-  birdCommonName: string;
-  birdScientificName: string;
-};
-
-type HomeBirdRow = {
-  slug: string;
-  common_name: string;
-  scientific_name: string;
-};
-
-type HomePhotoRow = {
-  id: string;
-  title: string | null;
-  alt: string;
-  camera: string;
-  lens: string;
-  uploaded_at: string;
-  photo_variants: PhotoVariantRow[];
-  bird: HomeBirdRow | HomeBirdRow[] | null;
-};
-
 function getRelatedBird(bird: HomePhotoRow["bird"]): HomeBirdRow | null {
   if (Array.isArray(bird)) {
     return bird[0] ?? null;
@@ -214,6 +212,7 @@ function mapHomePhoto(photo: HomePhotoRow): HomePhoto {
     id: photo.id,
     title: photo.title ?? undefined,
     src: largeVariant?.public_url ?? cardVariant?.public_url ?? "",
+    largeSrc: largeVariant?.public_url ?? cardVariant?.public_url,
     alt: photo.alt,
     uploadedAt: photo.uploaded_at,
     camera: photo.camera,

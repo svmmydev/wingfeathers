@@ -13,6 +13,7 @@ import {
 type Photo = {
   id: string;
   src: string;
+  largeSrc?: string;
   alt: string;
   birdSlug?: string;
   birdCommonName?: string;
@@ -320,7 +321,7 @@ export function PhotoGallery({
                     }`}
                   >
                     <Image
-                      src={selectedPhoto.src}
+                      src={selectedPhoto.largeSrc ?? selectedPhoto.src}
                       alt={selectedPhoto.alt}
                       width={1600}
                       height={1200}

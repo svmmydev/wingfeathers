@@ -1,17 +1,6 @@
-import { redirect } from "next/navigation";
-
 import { logout } from "@/app/login/actions";
-import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminPage() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.auth.getClaims();
-
-  if (error || !data?.claims) {
-    redirect("/login");
-  }
-
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
       <div className="flex flex-col gap-6 border-2 border-(--color-border)/60 bg-(--color-surface) p-6 shadow-lg shadow-black/30 sm:flex-row sm:items-center sm:justify-between">

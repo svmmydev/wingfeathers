@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
 import { getBirdBySlug } from "@/lib/birds";
+import { isAuthenticated } from "@/lib/auth";
 
 type BirdDetailPageProps = {
   params: Promise<{
@@ -11,7 +13,10 @@ type BirdDetailPageProps = {
 export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
   const { birdSlug } = await params;
 
-  const bird = await getBirdBySlug(birdSlug);
+  const [bird, isAdmin] = await Promise.all([
+    getBirdBySlug(birdSlug),
+    isAuthenticated(),
+  ]);
 
   if (!bird) {
     notFound();
@@ -24,13 +29,27 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           Ficha de ave
         </p>
 
-        <h1 className="text-4xl font-semibold tracking-tight text-(--color-text)">
-          {bird.commonName}
-        </h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-(--color-text)">
+              {bird.commonName}
+            </h1>
 
-        <p className="mt-2 text-lg italic text-(--color-text-muted)">
-          {bird.scientificName}
-        </p>
+            <p className="mt-2 text-lg italic text-(--color-text-muted)">
+              {bird.scientificName}
+            </p>
+          </div>
+
+          {isAdmin && (
+            <Link
+              href={`/admin/birds/${bird.id}/edit`}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+            >
+              <span aria-hidden="true">✎</span>
+              Editar
+            </Link>
+          )}
+        </div>
 
         <p className="mt-6 max-w-3xl text-lg leading-8 text-(--color-text-muted)">
           {bird.description}

@@ -50,6 +50,24 @@ type HomePhotoRow = {
   bird: HomeBirdRow | HomeBirdRow[] | null;
 };
 
+type AdminBirdListItem = {
+  id: string;
+  slug: string;
+  commonName: string;
+  scientificName: string;
+  family: string;
+  isNative: boolean;
+};
+
+type AdminBirdListRow = {
+  id: string;
+  slug: string;
+  common_name: string;
+  scientific_name: string;
+  family: string;
+  is_native: boolean;
+};
+
 function mapPhoto(photo: PhotoRow): BirdPhoto {
   const cardVariant = photo.photo_variants.find(
     (variant) => variant.variant_type === "card",
@@ -130,9 +148,6 @@ export async function getBirds(): Promise<Bird[]> {
       `,
     )
     .order("common_name", { ascending: true });
-
-  console.log("BIRDS DATA:", data);
-  console.log("BIRDS ERROR:", error);
 
   if (error) {
     throw new Error(error.message);

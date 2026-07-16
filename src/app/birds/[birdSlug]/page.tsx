@@ -43,7 +43,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           {isAdmin && (
             <Link
               href={`/admin/birds/${bird.id}/edit`}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
             >
               <span aria-hidden="true">✎</span>
               Editar
@@ -71,14 +71,15 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
         </h2>
 
         <dl className="mt-5 space-y-5 text-sm leading-6">
-          <div>
-            <dt className="font-semibold text-(--color-text)">Familia</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.family}</dd>
-          </div>
-
-          <div>
-            <dt className="font-semibold text-(--color-text)">Tamaño</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.size}</dd>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <dt className="font-semibold text-(--color-text)">Familia</dt>
+              <dd className="mt-1 text-(--color-text-muted)">{bird.family}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-(--color-text)">Tamaño</dt>
+              <dd className="mt-1 text-(--color-text-muted)">{bird.size}</dd>
+            </div>
           </div>
 
           <div>

@@ -31,7 +31,7 @@ export function AppHeader() {
         <div className="flex shrink-0 justify-end">
           <Link
             href="/contact"
-            className="rounded-xl border border-(--color-border) bg-(--color-button-background) px-3 py-2 text-sm font-medium shadow-sm shadow-black/25 transition hover:border-(--color-border-accent) hover:text-(--color-accent) sm:px-4"
+            className="rounded-md border border-(--color-border) bg-(--color-button-background) px-3 py-2 text-sm font-medium shadow-sm shadow-black/25 transition hover:border-(--color-border-accent) hover:text-(--color-accent) sm:px-4"
           >
             Contacto
           </Link>

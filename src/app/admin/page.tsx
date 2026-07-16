@@ -3,7 +3,7 @@ import { logout } from "@/app/login/actions";
 export default async function AdminPage() {
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
-      <div className="flex flex-col gap-6 border-2 border-(--color-border)/60 bg-(--color-surface) p-6 shadow-lg shadow-black/30 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-6 rounded-2xl border-2 border-(--color-border)/60 bg-(--color-surface) p-6 shadow-lg shadow-black/30 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Panel admin</h1>
 
@@ -15,7 +15,7 @@ export default async function AdminPage() {
         <form action={logout}>
           <button
             type="submit"
-            className="border border-(--color-border) bg-black/30 px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+            className="cursor-pointer rounded-md border border-(--color-border) bg-black/30 px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
           >
             Cerrar sesión
           </button>

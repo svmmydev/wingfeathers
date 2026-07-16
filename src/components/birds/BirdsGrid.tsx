@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { Bird } from "@/data/birds";
+import type { Bird } from "@/types/birds";
 
 type BirdsGridProps = {
   birds: Bird[];

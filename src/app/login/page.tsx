@@ -11,12 +11,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <section className="mx-auto flex min-h-[70svh] max-w-md flex-col justify-center px-6 py-16">
-      <div className="border-2 border-(--color-border)/60 bg-(--color-surface) p-6 shadow-lg shadow-black/30">
-        <h1 className="text-2xl font-semibold text-white">Acceso admin</h1>
-
-        <p className="mt-3 text-sm leading-6 text-(--color-text-muted)">
-          Inicia sesión para gestionar el contenido privado de WingFeathers.
-        </p>
+      <div className="rounded-2xl border-2 border-(--color-border)/60 bg-(--color-surface) p-6 shadow-lg shadow-black/30">
+        <h1 className="text-center mb-10 text-2xl font-semibold text-white">
+          Acceso admin
+        </h1>
 
         {error && (
           <p className="mt-4 border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-100">
@@ -63,12 +61,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
-          >
-            Entrar
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              className="min-w-32 rounded-xl cursor-pointer border border-(--color-border) bg-(--color-button-background) mt-4 mb-2 px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+            >
+              Entrar
+            </button>
+          </div>
         </form>
       </div>
     </section>

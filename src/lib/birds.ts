@@ -50,24 +50,6 @@ type HomePhotoRow = {
   bird: HomeBirdRow | HomeBirdRow[] | null;
 };
 
-type AdminBirdListItem = {
-  id: string;
-  slug: string;
-  commonName: string;
-  scientificName: string;
-  family: string;
-  isNative: boolean;
-};
-
-type AdminBirdListRow = {
-  id: string;
-  slug: string;
-  common_name: string;
-  scientific_name: string;
-  family: string;
-  is_native: boolean;
-};
-
 function mapPhoto(photo: PhotoRow): BirdPhoto {
   const cardVariant = photo.photo_variants.find(
     (variant) => variant.variant_type === "card",
@@ -204,6 +186,54 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   return mapBird(data as BirdRow);
 }
 
+export async function getBirdById(birdId: string): Promise<Bird | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("birds")
+    .select(
+      `
+        id,
+        slug,
+        common_name,
+        scientific_name,
+        family,
+        is_native,
+        geography,
+        description,
+        habitat,
+        feeding,
+        behavior,
+        breeding,
+        size,
+        photos (
+          id,
+          title,
+          alt,
+          camera,
+          lens,
+          uploaded_at,
+          photo_variants (
+            variant_type,
+            public_url
+          )
+        )
+      `,
+    )
+    .eq("id", birdId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return mapBird(data as BirdRow);
+}
+
 function getRelatedBird(bird: HomePhotoRow["bird"]): HomeBirdRow | null {
   if (Array.isArray(bird)) {
     return bird[0] ?? null;
@@ -226,7 +256,7 @@ function mapHomePhoto(photo: HomePhotoRow): HomePhoto {
   return {
     id: photo.id,
     title: photo.title ?? undefined,
-    src: largeVariant?.public_url ?? cardVariant?.public_url ?? "",
+    src: cardVariant?.public_url ?? largeVariant?.public_url ?? "",
     largeSrc: largeVariant?.public_url ?? cardVariant?.public_url,
     alt: photo.alt,
     uploadedAt: photo.uploaded_at,

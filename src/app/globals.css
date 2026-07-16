@@ -24,13 +24,11 @@
 }
 
 html {
-  min-height: 100%;
   scroll-behavior: smooth;
   background: var(--color-background);
 }
 
 body {
-  min-height: 100%;
   margin: 0;
   background: var(--color-background);
   color: var(--color-text);

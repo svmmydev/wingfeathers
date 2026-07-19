@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBirdById } from "@/lib/birds";
 import { updateBird } from "./actions";
+import { DeleteBirdButton } from "./DeleteBirdButton";
 
 type EditBirdPageProps = {
   params: Promise<{
@@ -13,9 +14,11 @@ type EditBirdPageProps = {
 };
 
 const inputClassName =
-  "mt-2 w-full rounded-xl border border-(--color-border) bg-transparent px-4 py-3 text-(--color-text) outline-none transition placeholder:text-(--color-text-muted) focus:border-(--color-border-accent)";
+  "mt-2 w-full rounded-xl border border-(--color-border) bg-transparent px-4 py-3 font-normal text-sm text-(--color-text) outline-none transition placeholder:text-(--color-text-muted) focus:border-(--color-border-accent)";
 
-const textareaClassName = `${inputClassName} min-h-32 resize-y`;
+const textareaClassName = `${inputClassName} min-h-32 resize-y text-sm`;
+
+const labelClassName = "text-md font-medium text-(--color-text)";
 
 export default async function EditBirdPage({
   params,
@@ -68,7 +71,7 @@ export default async function EditBirdPage({
         <input type="hidden" name="originalSlug" value={bird.slug} />
 
         <div className="grid gap-6 md:grid-cols-2">
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Nombre común
             <input
               type="text"
@@ -79,18 +82,18 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Nombre científico
             <input
               type="text"
               name="scientificName"
               defaultValue={bird.scientificName}
               required
-              className={`${inputClassName} italic`}
+              className={inputClassName}
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Familia
             <input
               type="text"
@@ -101,7 +104,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Tamaño
             <input
               type="text"
@@ -112,18 +115,34 @@ export default async function EditBirdPage({
           </label>
         </div>
 
-        <label className="flex w-fit items-center gap-3 text-sm font-medium text-(--color-text)">
+        <label className="flex justify-center cursor-pointer gap-3 text-sm font-medium text-(--color-text)">
           <input
             type="checkbox"
             name="isNative"
             defaultChecked={bird.isNative}
-            className="h-4 w-4 accent-(--color-accent)"
+            className="peer sr-only"
           />
+          <span
+            aria-hidden="true"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-(--color-border) bg-transparent text-transparent transition peer-checked:border-(--color-border-accent) peer-checked:bg-(--color-button-background) peer-checked:text-(--color-accent) peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-(--color-border-accent)"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 8.5 6.5 12 13 4.5" />
+            </svg>
+          </span>
           Es una especie autóctona
         </label>
 
         <div className="grid gap-6">
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Descripción
             <textarea
               name="description"
@@ -132,7 +151,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Hábitat
             <textarea
               name="habitat"
@@ -141,7 +160,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Alimentación
             <textarea
               name="feeding"
@@ -150,7 +169,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Comportamiento
             <textarea
               name="behavior"
@@ -159,7 +178,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Geografía
             <textarea
               name="geography"
@@ -168,7 +187,7 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className="text-sm font-medium text-(--color-text)">
+          <label className={labelClassName}>
             Reproducción
             <textarea
               name="breeding"
@@ -194,6 +213,23 @@ export default async function EditBirdPage({
           </button>
         </div>
       </form>
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-(--color-border) pt-8">
+        <div>
+          <h2 className="text-lg font-semibold text-(--color-text)">
+            Eliminar ficha
+          </h2>
+
+          <p className="mt-1 text-sm text-(--color-text-muted)">
+            La ficha se eliminará permanentemente y no podrá recuperarse.
+          </p>
+        </div>
+
+        <DeleteBirdButton
+          birdId={bird.id}
+          birdSlug={bird.slug}
+          birdName={bird.commonName}
+        />
+      </div>
     </section>
   );
 }

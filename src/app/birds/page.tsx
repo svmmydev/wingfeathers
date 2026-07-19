@@ -1,8 +1,10 @@
 import { BirdsGrid } from "@/components/birds/BirdsGrid";
 import { getBirds } from "@/lib/birds";
+import Link from "next/link";
+import { isAuthenticated } from "@/lib/auth";
 
 export default async function BirdsPage() {
-  const birds = await getBirds();
+  const [birds, isAdmin] = await Promise.all([getBirds(), isAuthenticated()]);
 
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
@@ -20,6 +22,17 @@ export default async function BirdsPage() {
           información biológica, comportamiento, alimentación, hábitat y galería
           asociada.
         </p>
+
+        {isAdmin && (
+          <div className="mt-4">
+            <Link
+              href="/admin/birds/new"
+              className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+            >
+              Crear ficha
+            </Link>
+          </div>
+        )}
       </div>
 
       <BirdsGrid birds={birds} />

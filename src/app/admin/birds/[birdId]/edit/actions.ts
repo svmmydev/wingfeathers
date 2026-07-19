@@ -103,3 +103,51 @@ export async function updateBird(formData: FormData): Promise<void> {
 
   redirect(`/birds/${data.slug}`);
 }
+
+export async function deleteBird(formData: FormData): Promise<void> {
+  const birdId = getFormValue(formData, "birdId");
+  const birdSlug = getFormValue(formData, "birdSlug");
+
+  if (!birdId) {
+    redirect("/birds");
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data, error } = await supabase
+    .from("birds")
+    .delete()
+    .eq("id", birdId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error deleting bird:", error);
+
+    redirectToEditWithError(birdId, "No se ha podido eliminar la ficha.");
+  }
+
+  if (!data) {
+    redirectToEditWithError(
+      birdId,
+      "No se ha encontrado la ficha que intentabas eliminar.",
+    );
+  }
+
+  revalidatePath("/");
+  revalidatePath("/birds");
+
+  if (birdSlug) {
+    revalidatePath(`/birds/${birdSlug}`);
+  }
+
+  redirect("/birds");
+}

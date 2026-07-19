@@ -66,13 +66,21 @@ export function BirdsGrid({ birds }: BirdsGridProps) {
                 href={`/birds/${bird.slug}`}
                 className="group overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-lg shadow-black/25 transition hover:border-(--color-border-accent)"
               >
-                <Image
-                  src={coverPhoto.src}
-                  alt={coverPhoto.alt}
-                  width={400}
-                  height={300}
-                  className="aspect-4/3 w-full object-cover"
-                />
+                <div className="aspect-4/3 overflow-hidden bg-(--color-background-body)">
+                  {coverPhoto ? (
+                    <Image
+                      src={coverPhoto.src}
+                      alt={coverPhoto.alt}
+                      width={400}
+                      height={300}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-4 text-center text-sm italic text-(--color-text-muted)">
+                      Sin fotografías
+                    </div>
+                  )}
+                </div>
 
                 <div className="p-3">
                   <h2 className="text-xl font-semibold text-(--color-text)">

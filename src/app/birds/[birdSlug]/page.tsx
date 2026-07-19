@@ -43,7 +43,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           {isAdmin && (
             <Link
               href={`/admin/birds/${bird.id}/edit`}
-              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+              className="inline-flex shrink-0 gap-2 rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
             >
               <span aria-hidden="true">✎</span>
               Editar
@@ -55,14 +55,22 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           {bird.description}
         </p>
 
-        <div className="mt-8">
-          <PhotoGallery
-            photos={bird.photos}
-            showPhotoInfo
-            birdCommonName={bird.commonName}
-            birdScientificName={bird.scientificName}
-          />
-        </div>
+        {bird.photos.length > 0 ? (
+          <div className="mt-8">
+            <PhotoGallery
+              photos={bird.photos}
+              showPhotoInfo
+              birdCommonName={bird.commonName}
+              birdScientificName={bird.scientificName}
+            />
+          </div>
+        ) : (
+          <div className="flex items-center justify-center mt-16 px-6 text-center">
+            <p className="text-sm italic text-(--color-text-muted)">
+              Esta ficha todavía no tiene fotografías.
+            </p>
+          </div>
+        )}
       </div>
 
       <aside className="h-fit rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 shadow-lg shadow-black/25">

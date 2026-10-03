@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   DeleteObjectCommand,
   PutObjectCommand,
@@ -35,7 +37,7 @@ export async function createR2UploadUrl(key: string) {
 }
 
 export function getR2PublicUrl(key: string) {
-  return `${publicUrl.replace(/\/$/, "")}/${key}`;
+  return `${publicUrl.replace(/\/+$/, "")}/${key}`;
 }
 
 export async function deleteFromR2(key: string) {

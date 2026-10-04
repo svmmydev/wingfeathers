@@ -248,7 +248,7 @@ export function PhotoGallery({
             key={photo.id}
             type="button"
             onClick={() => openPhoto(index)}
-            className="group overflow-hidden border-2 border-(--color-border)/60 bg-(--color-surface) shadow-lg shadow-black/30 transition hover:border-(--color-border-accent)"
+            className="cursor-pointer group overflow-hidden border-2 border-(--color-border)/60 bg-(--color-surface) shadow-lg shadow-black/30 transition hover:border-(--color-border-accent)"
           >
             <Image
               src={photo.src}

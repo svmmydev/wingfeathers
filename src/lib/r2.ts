@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const accountId = getRequiredEnv("R2_ACCOUNT_ID");
+const endpoint = getRequiredEnv("R2_ENDPOINT");
 const accessKeyId = getRequiredEnv("R2_ACCESS_KEY_ID");
 const secretAccessKey = getRequiredEnv("R2_SECRET_ACCESS_KEY");
 const bucketName = getRequiredEnv("R2_BUCKET_NAME");
@@ -15,7 +15,7 @@ const publicUrl = getRequiredEnv("R2_PUBLIC_URL");
 
 const r2Client = new S3Client({
   region: "auto",
-  endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+  endpoint,
   credentials: {
     accessKeyId,
     secretAccessKey,

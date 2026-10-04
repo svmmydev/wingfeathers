@@ -2,17 +2,37 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { ChangeEvent, SubmitEventHandler } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import {
-  ChangeEvent,
-  SubmitEventHandler,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+  cleanupUploadedPhoto,
+  createPhotoUploadUrls,
+  saveUploadedPhoto,
+} from "./actions";
 
 type PhotoUploadFormProps = {
   birdId: string;
   birdSlug: string;
+};
+
+type PhotoItem = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  alt: string;
+  title: string;
+  camera: string;
+  lens: string;
+  cameraOverridden: boolean;
+  lensOverridden: boolean;
+};
+
+type WebpVariant = {
+  blob: Blob;
+  width: number;
+  height: number;
 };
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -20,169 +40,654 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const inputClassName =
-  "mt-2 w-full rounded-xl border border-(--color-border) bg-transparent px-4 py-3 font-normal text-sm text-(--color-text) outline-none transition placeholder:text-(--color-text-muted) placeholder:italic placeholder:opacity-40 focus:border-(--color-border-accent)";
+  "mt-2 w-full rounded-xl border border-(--color-border) bg-transparent px-4 py-3 font-normal text-sm text-(--color-text) outline-none transition placeholder:text-(--color-text-muted) placeholder:italic placeholder:opacity-40 focus:border-(--color-border-accent) disabled:cursor-not-allowed disabled:opacity-50";
 
 const labelClassName = "text-md font-medium text-(--color-text)";
 
 export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
-  const [file, setFile] = useState<File | null>(null);
+  const router = useRouter();
+
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [commonCamera, setCommonCamera] = useState("");
+  const [commonLens, setCommonLens] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processedInfo, setProcessedInfo] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const previewUrl = useMemo(() => {
-    if (!file) {
-      return null;
-    }
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
-    return URL.createObjectURL(file);
-  }, [file]);
+  const previewUrlsRef = useRef<Set<string>>(new Set());
+
+  const isMultiple = photos.length > 1;
 
   useEffect(() => {
+    const previewUrls = previewUrlsRef.current;
+
     return () => {
-      if (previewUrl) {
+      for (const previewUrl of previewUrls) {
         URL.revokeObjectURL(previewUrl);
       }
+
+      previewUrls.clear();
     };
-  }, [previewUrl]);
+  }, []);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFile = event.target.files?.[0];
+    const selectedFiles = Array.from(event.target.files ?? []);
 
-    setError(null);
-    setProcessedInfo(null);
-
-    if (!selectedFile) {
-      setFile(null);
+    if (selectedFiles.length === 0) {
       return;
     }
 
-    if (!ALLOWED_IMAGE_TYPES.has(selectedFile.type)) {
-      setFile(null);
-      event.target.value = "";
-      setError("Selecciona una imagen JPG, PNG o WebP.");
-      return;
+    const newPhotos: PhotoItem[] = [];
+
+    let hasInvalidType = false;
+    let hasInvalidSize = false;
+
+    for (const selectedFile of selectedFiles) {
+      if (!ALLOWED_IMAGE_TYPES.has(selectedFile.type)) {
+        hasInvalidType = true;
+        continue;
+      }
+
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        hasInvalidSize = true;
+        continue;
+      }
+
+      const previewUrl = URL.createObjectURL(selectedFile);
+
+      previewUrlsRef.current.add(previewUrl);
+
+      newPhotos.push({
+        id: crypto.randomUUID(),
+        file: selectedFile,
+        previewUrl,
+        alt: "",
+        title: "",
+        camera: commonCamera,
+        lens: commonLens,
+        cameraOverridden: false,
+        lensOverridden: false,
+      });
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      setFile(null);
-      event.target.value = "";
-      setError("La imagen no puede superar los 50 MB.");
-      return;
-    }
+    setPhotos((currentPhotos) => [...currentPhotos, ...newPhotos]);
 
-    setFile(selectedFile);
+    if (hasInvalidType && hasInvalidSize) {
+      setError(
+        "Algunas imágenes se han ignorado porque no tienen un formato válido o superan los 50 MB.",
+      );
+    } else if (hasInvalidType) {
+      setError(
+        "Algunas imágenes se han ignorado. Solo se admiten JPG, PNG y WebP.",
+      );
+    } else if (hasInvalidSize) {
+      setError("Algunas imágenes se han ignorado porque superan los 50 MB.");
+    } else {
+      setError(null);
+    }
+  }
+
+  function updatePhotoText(
+    photoId: string,
+    field: "alt" | "title",
+    value: string,
+  ) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              [field]: value,
+            }
+          : photo,
+      ),
+    );
+  }
+
+  function updatePhotoCamera(photoId: string, value: string) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              camera: value,
+              cameraOverridden: true,
+            }
+          : photo,
+      ),
+    );
+  }
+
+  function updatePhotoLens(photoId: string, value: string) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              lens: value,
+              lensOverridden: true,
+            }
+          : photo,
+      ),
+    );
+  }
+
+  function handleCommonCameraChange(value: string) {
+    setCommonCamera(value);
+
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.cameraOverridden
+          ? photo
+          : {
+              ...photo,
+              camera: value,
+            },
+      ),
+    );
+  }
+
+  function handleCommonLensChange(value: string) {
+    setCommonLens(value);
+
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.lensOverridden
+          ? photo
+          : {
+              ...photo,
+              lens: value,
+            },
+      ),
+    );
+  }
+
+  function applyCommonCamera(photoId: string) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              camera: commonCamera,
+              cameraOverridden: false,
+            }
+          : photo,
+      ),
+    );
+  }
+
+  function applyCommonLens(photoId: string) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              lens: commonLens,
+              lensOverridden: false,
+            }
+          : photo,
+      ),
+    );
+  }
+
+  function removePhoto(photoId: string) {
+    setPhotos((currentPhotos) => {
+      const photo = currentPhotos.find((item) => item.id === photoId);
+
+      if (photo) {
+        releasePreviewUrl(photo.previewUrl);
+      }
+
+      return currentPhotos.filter((item) => item.id !== photoId);
+    });
+  }
+
+  function releasePreviewUrl(previewUrl: string) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrlsRef.current.delete(previewUrl);
   }
 
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
 
-    if (!file) {
-      setError("Selecciona una fotografía.");
+    if (photos.length === 0) {
+      setError("Selecciona al menos una fotografía.");
+      return;
+    }
+
+    const hasMissingAlt = photos.some((photo) => !photo.alt.trim());
+
+    if (hasMissingAlt) {
+      setError("Todas las fotografías deben tener texto alternativo.");
       return;
     }
 
     setError(null);
-    setProcessedInfo(null);
-    setIsProcessing(true);
+    setIsUploading(true);
+
+    const uploadedPhotoIds: string[] = [];
 
     try {
-      const bitmap = await createImageBitmap(file);
+      for (let index = 0; index < photos.length; index++) {
+        const photo = photos[index];
 
-      try {
-        const card = await createWebpVariant(bitmap, 1200, 0.82);
-        const large = await createWebpVariant(bitmap, 2400, 0.9);
+        setUploadProgress({
+          current: index + 1,
+          total: photos.length,
+        });
 
-        setProcessedInfo(
-          `Variantes preparadas: card ${formatBytes(card.size)} · large ${formatBytes(large.size)}`,
-        );
-      } finally {
-        bitmap.close();
+        const bitmap = await createImageBitmap(photo.file);
+
+        let card: WebpVariant;
+        let large: WebpVariant;
+
+        try {
+          card = await createWebpVariant(bitmap, 1200, 0.82);
+
+          large = await createWebpVariant(bitmap, 2400, 0.9);
+        } finally {
+          bitmap.close();
+        }
+
+        const upload = await createPhotoUploadUrls(birdId);
+
+        const [cardResponse, largeResponse] = await Promise.all([
+          fetch(upload.card.uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "image/webp",
+            },
+            body: card.blob,
+          }),
+
+          fetch(upload.large.uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "image/webp",
+            },
+            body: large.blob,
+          }),
+        ]);
+
+        if (!cardResponse.ok || !largeResponse.ok) {
+          await cleanupUploadedPhoto(birdId, upload.photoId);
+
+          throw new Error("No se han podido subir las imágenes a R2.");
+        }
+
+        await saveUploadedPhoto({
+          birdId,
+          photoId: upload.photoId,
+          alt: photo.alt.trim(),
+          title: photo.title.trim(),
+          camera: photo.camera.trim(),
+          lens: photo.lens.trim(),
+
+          card: {
+            width: card.width,
+            height: card.height,
+            sizeBytes: card.blob.size,
+          },
+
+          large: {
+            width: large.width,
+            height: large.height,
+            sizeBytes: large.blob.size,
+          },
+        });
+
+        uploadedPhotoIds.push(photo.id);
       }
-    } catch {
-      setError("No se ha podido procesar la fotografía seleccionada.");
+
+      router.push(`/birds/${birdSlug}`);
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+
+      if (uploadedPhotoIds.length > 0) {
+        const uploadedIds = new Set(uploadedPhotoIds);
+
+        for (const photo of photos) {
+          if (uploadedIds.has(photo.id)) {
+            releasePreviewUrl(photo.previewUrl);
+          }
+        }
+
+        setPhotos((currentPhotos) =>
+          currentPhotos.filter((photo) => !uploadedIds.has(photo.id)),
+        );
+
+        setError(
+          `Se han subido ${uploadedPhotoIds.length} de ${photos.length} fotografías. Las restantes siguen pendientes.`,
+        );
+      } else {
+        setError("No se han podido subir las fotografías.");
+      }
     } finally {
-      setIsProcessing(false);
+      setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <input type="hidden" name="birdId" value={birdId} />
-
       <div>
-        <label className={labelClassName}>
-          Fotografía original
-          <input
-            type="file"
-            name="photo"
-            accept="image/jpeg,image/png,image/webp"
-            required
-            onChange={handleFileChange}
-            className={`${inputClassName} cursor-pointer`}
-          />
-        </label>
+        <p className={labelClassName}>Fotografías</p>
 
-        <p className="mt-2 text-sm text-(--color-text-muted)">
-          La imagen original no se almacenará. Se generarán las variantes
-          optimizadas para la web.
+        <input
+          type="file"
+          name="photos"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          disabled={isUploading}
+          onChange={handleFileChange}
+          aria-label="Seleccionar fotografías"
+          className="
+            mt-6 w-full max-w-md cursor-pointer
+            rounded-xl border border-(--color-border)
+            bg-transparent px-3 py-2
+            text-sm text-(--color-text-muted)
+            outline-none transition
+            file:mr-4
+            file:cursor-pointer
+            file:rounded-md
+            file:border
+            file:border-(--color-border)
+            file:bg-(--color-button-background)
+            file:px-4
+            file:py-2
+            file:text-sm
+            file:font-medium
+            file:text-(--color-text)
+            hover:file:border-(--color-border-accent)
+            hover:file:text-(--color-accent)
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        />
+
+        <p className="mt-4 text-sm text-(--color-text-muted)">
+          Puedes seleccionar una o varias imágenes.
         </p>
       </div>
 
-      {previewUrl && (
-        <div className="relative aspect-4/3 overflow-hidden rounded-xl border border-(--color-border)">
-          <Image
-            src={previewUrl}
-            alt="Previsualización de la fotografía seleccionada"
-            fill
-            unoptimized
-            className="object-contain"
-          />
+      {photos.length > 0 && (
+        <p className="text-sm text-(--color-text-muted)">
+          {photos.length === 1
+            ? "1 fotografía seleccionada"
+            : `${photos.length} fotografías seleccionadas`}
+        </p>
+      )}
+
+      {isMultiple && (
+        <div className="rounded-xl border border-(--color-border) p-5">
+          <div>
+            <h2 className="text-lg font-medium text-(--color-text)">
+              Valores comunes
+            </h2>
+
+            <p className="mt-1 text-sm text-(--color-text-muted)">
+              Se aplicarán a las fotografías que no tengan un valor individual
+              diferente.
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-6 md:grid-cols-2">
+            <label className={labelClassName}>
+              Cámara
+              <input
+                type="text"
+                value={commonCamera}
+                disabled={isUploading}
+                placeholder="Canon EOS R5.."
+                onChange={(event) =>
+                  handleCommonCameraChange(event.target.value)
+                }
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Objetivo
+              <input
+                type="text"
+                value={commonLens}
+                disabled={isUploading}
+                placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
+                onChange={(event) => handleCommonLensChange(event.target.value)}
+                className={inputClassName}
+              />
+            </label>
+          </div>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <label className={labelClassName}>
-          Texto alternativo
-          <input
-            type="text"
-            name="alt"
-            placeholder="Calamón común caminando entre vegetación.."
-            required
-            className={inputClassName}
-          />
-        </label>
+      {photos.length === 1 && (
+        <div className="grid gap-8 rounded-xl border border-(--color-border) p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div>
+            <div className="relative aspect-4/3 overflow-hidden rounded-lg bg-black/10">
+              <Image
+                src={photos[0].previewUrl}
+                alt="Previsualización de la fotografía"
+                fill
+                unoptimized
+                className="object-contain"
+              />
+            </div>
 
-        <label className={labelClassName}>
-          Título
-          <input
-            type="text"
-            name="title"
-            placeholder="Calamón común en la marisma.."
-            className={inputClassName}
-          />
-        </label>
+            <div className="mt-2 flex items-center justify-between gap-4">
+              <p className="truncate text-xs text-(--color-text-muted)">
+                {photos[0].file.name}
+              </p>
 
-        <label className={labelClassName}>
-          Cámara
-          <input
-            type="text"
-            name="camera"
-            placeholder="Canon EOS R5.."
-            className={inputClassName}
-          />
-        </label>
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => removePhoto(photos[0].id)}
+                className="shrink-0 cursor-pointer text-sm text-(--color-text-muted) transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
 
-        <label className={labelClassName}>
-          Objetivo
-          <input
-            type="text"
-            name="lens"
-            placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
-            className={inputClassName}
-          />
-        </label>
-      </div>
+          <div className="grid content-start gap-5">
+            <label className={labelClassName}>
+              Texto alternativo
+              <input
+                type="text"
+                value={photos[0].alt}
+                required
+                disabled={isUploading}
+                placeholder="Calamón común caminando entre vegetación.."
+                onChange={(event) =>
+                  updatePhotoText(photos[0].id, "alt", event.target.value)
+                }
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Título
+              <input
+                type="text"
+                value={photos[0].title}
+                disabled={isUploading}
+                placeholder="Calamón común en la marisma.."
+                onChange={(event) =>
+                  updatePhotoText(photos[0].id, "title", event.target.value)
+                }
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Cámara
+              <input
+                type="text"
+                value={photos[0].camera}
+                disabled={isUploading}
+                placeholder="Canon EOS R5.."
+                onChange={(event) =>
+                  updatePhotoCamera(photos[0].id, event.target.value)
+                }
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Objetivo
+              <input
+                type="text"
+                value={photos[0].lens}
+                disabled={isUploading}
+                placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
+                onChange={(event) =>
+                  updatePhotoLens(photos[0].id, event.target.value)
+                }
+                className={inputClassName}
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {isMultiple && (
+        <div className="space-y-6">
+          {photos.map((photo, index) => (
+            <div
+              key={photo.id}
+              className="grid gap-6 rounded-xl border border-(--color-border) p-5 md:grid-cols-3"
+            >
+              <div>
+                <div className="relative aspect-4/3 overflow-hidden rounded-lg bg-black/10">
+                  <Image
+                    src={photo.previewUrl}
+                    alt={`Previsualización ${index + 1}`}
+                    fill
+                    unoptimized
+                    className="object-contain"
+                  />
+                </div>
+
+                <p className="mt-2 truncate text-xs text-(--color-text-muted)">
+                  {photo.file.name}
+                </p>
+              </div>
+
+              <div className="space-y-5 md:col-span-2">
+                <div className="flex items-start justify-between gap-4">
+                  <p className="font-medium text-(--color-text)">
+                    Fotografía {index + 1}
+                  </p>
+
+                  <button
+                    type="button"
+                    disabled={isUploading}
+                    onClick={() => removePhoto(photo.id)}
+                    className="cursor-pointer text-sm text-(--color-text-muted) transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Quitar
+                  </button>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className={labelClassName}>
+                    Texto alternativo
+                    <input
+                      type="text"
+                      value={photo.alt}
+                      required
+                      disabled={isUploading}
+                      placeholder="Calamón común caminando entre vegetación.."
+                      onChange={(event) =>
+                        updatePhotoText(photo.id, "alt", event.target.value)
+                      }
+                      className={inputClassName}
+                    />
+                  </label>
+
+                  <label className={labelClassName}>
+                    Título
+                    <input
+                      type="text"
+                      value={photo.title}
+                      disabled={isUploading}
+                      placeholder="Calamón común en la marisma.."
+                      onChange={(event) =>
+                        updatePhotoText(photo.id, "title", event.target.value)
+                      }
+                      className={inputClassName}
+                    />
+                  </label>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className={labelClassName}>Cámara</p>
+
+                      {photo.cameraOverridden && (
+                        <button
+                          type="button"
+                          disabled={isUploading}
+                          onClick={() => applyCommonCamera(photo.id)}
+                          className="cursor-pointer text-xs text-amber-400 transition hover:text-amber-300 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Usar común
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={photo.camera}
+                      disabled={isUploading}
+                      placeholder="Canon EOS R5.."
+                      aria-label={`Cámara de la fotografía ${index + 1}`}
+                      onChange={(event) =>
+                        updatePhotoCamera(photo.id, event.target.value)
+                      }
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className={labelClassName}>Objetivo</p>
+
+                      {photo.lensOverridden && (
+                        <button
+                          type="button"
+                          disabled={isUploading}
+                          onClick={() => applyCommonLens(photo.id)}
+                          className="cursor-pointer text-xs text-amber-400 transition hover:text-amber-300 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Usar común
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      value={photo.lens}
+                      disabled={isUploading}
+                      placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
+                      aria-label={`Objetivo de la fotografía ${index + 1}`}
+                      onChange={(event) =>
+                        updatePhotoLens(photo.id, event.target.value)
+                      }
+                      className={inputClassName}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <p
@@ -190,12 +695,6 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
           className="rounded-xl border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200"
         >
           {error}
-        </p>
-      )}
-
-      {processedInfo && (
-        <p className="rounded-xl border border-(--color-border) px-4 py-3 text-sm text-(--color-text-muted)">
-          {processedInfo}
         </p>
       )}
 
@@ -209,10 +708,14 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
 
         <button
           type="submit"
-          disabled={!file || isProcessing}
+          disabled={photos.length === 0 || isUploading}
           className="inline-flex cursor-pointer rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent) disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isProcessing ? "Procesando..." : "Preparar fotografía"}
+          {isUploading && uploadProgress
+            ? `Subiendo ${uploadProgress.current} de ${uploadProgress.total}...`
+            : photos.length === 1
+              ? "Añadir fotografía"
+              : `Añadir ${photos.length} fotografías`}
         </button>
       </div>
     </form>
@@ -223,10 +726,11 @@ async function createWebpVariant(
   source: ImageBitmap,
   maxSize: number,
   quality: number,
-): Promise<Blob> {
+): Promise<WebpVariant> {
   const scale = Math.min(1, maxSize / Math.max(source.width, source.height));
 
   const width = Math.round(source.width * scale);
+
   const height = Math.round(source.height * scale);
 
   const canvas = document.createElement("canvas");
@@ -237,7 +741,7 @@ async function createWebpVariant(
   const context = canvas.getContext("2d");
 
   if (!context) {
-    throw new Error("Could not create canvas context");
+    throw new Error("No se ha podido crear el contexto del canvas.");
   }
 
   context.drawImage(source, 0, 0, width, height);
@@ -247,16 +751,12 @@ async function createWebpVariant(
   });
 
   if (!blob) {
-    throw new Error("Could not generate WebP image");
+    throw new Error("No se ha podido generar la imagen WebP.");
   }
 
-  return blob;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return {
+    blob,
+    width,
+    height,
+  };
 }

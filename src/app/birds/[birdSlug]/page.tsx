@@ -41,13 +41,21 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
           </div>
 
           {isAdmin && (
-            <Link
-              href={`/admin/birds/${bird.id}/edit`}
-              className="inline-flex shrink-0 gap-2 rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
-            >
-              <span aria-hidden="true">✎</span>
-              Editar
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`/admin/birds/${bird.id}/edit`}
+                className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+              >
+                Editar ave
+              </Link>
+
+              <Link
+                href={`/admin/birds/${bird.id}/photos/new`}
+                className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+              >
+                Añadir foto
+              </Link>
+            </div>
           )}
         </div>
 
@@ -114,7 +122,6 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
 
           <div>
             <dt className="font-semibold text-(--color-text)">Geografía</dt>
-            {/*TODO: Implementar la info de geography en los campos existentes de la base de datos*/}
             <dd className="mt-1 text-(--color-text-muted)">{bird.geography}</dd>
           </div>
         </dl>

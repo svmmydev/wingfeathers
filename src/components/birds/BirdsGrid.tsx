@@ -64,7 +64,7 @@ export function BirdsGrid({ birds }: BirdsGridProps) {
               <Link
                 key={bird.id}
                 href={`/birds/${bird.slug}`}
-                className="group overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface) shadow-lg shadow-black/25 transition hover:border-(--color-border-accent)"
+                className="group overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-lg shadow-black/25 transition hover:border-(--color-border-accent)"
               >
                 <div className="aspect-4/3 overflow-hidden bg-(--color-background-body)">
                   {coverPhoto ? (

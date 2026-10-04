@@ -34,7 +34,7 @@ export default async function NewBirdPhotoPage({
           </h1>
 
           <p className="mt-2 text-(--color-text-muted)">
-            Añade una nueva fotografía de {bird.commonName}.
+            Añade una nuevo contenido de {bird.commonName}.
           </p>
         </div>
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createSlug } from "@/lib/slug";
+import { deleteBirdPhotos } from "@/app/admin/birds/[birdId]/photos/actions";
 
 function getFormValue(formData: FormData, fieldName: string): string {
   return String(formData.get(fieldName) ?? "").trim();
@@ -35,6 +36,7 @@ export async function updateBird(formData: FormData): Promise<void> {
   const behavior = getFormValue(formData, "behavior");
   const breeding = getFormValue(formData, "breeding");
   const size = getFormValue(formData, "size");
+  const wingspan = getFormValue(formData, "wingspan");
   const isNative = formData.get("isNative") === "on";
 
   if (!commonName || !scientificName || !family) {
@@ -76,6 +78,7 @@ export async function updateBird(formData: FormData): Promise<void> {
       behavior,
       breeding,
       size,
+      wingspan,
     })
     .eq("id", birdId)
     .select("slug")
@@ -120,6 +123,46 @@ export async function deleteBird(formData: FormData): Promise<void> {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Obtener las fotografías asociadas al ave.
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("id")
+    .eq("bird_id", birdId);
+
+  if (photosError) {
+    console.error("Error fetching bird photos:", photosError);
+    redirectToEditWithError(
+      birdId,
+      "No se han podido consultar las fotografías del ave.",
+    );
+  }
+
+  if (photos && photos.length > 0) {
+    let failedCount = 0;
+
+    try {
+      const result = await deleteBirdPhotos(
+        birdId,
+        photos.map((photo) => photo.id),
+      );
+
+      failedCount = result.failedIds.length;
+    } catch (error) {
+      console.error("Error deleting bird photos:", error);
+      redirectToEditWithError(
+        birdId,
+        "No se han podido eliminar las fotografías del ave.",
+      );
+    }
+
+    if (failedCount > 0) {
+      redirectToEditWithError(
+        birdId,
+        "Algunas fotografías no se han podido eliminar. La ficha se conserva para poder reintentarlo.",
+      );
+    }
   }
 
   const { data, error } = await supabase

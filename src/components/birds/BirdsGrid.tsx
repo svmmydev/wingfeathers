@@ -51,6 +51,7 @@ export function BirdsGrid({ birds }: BirdsGridProps) {
           value={searchValue}
           onChange={(event) => setSearchValue(event.target.value)}
           placeholder="Nombre común, científico o familia"
+          autoComplete="off"
           className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-text) outline-none transition placeholder:text-(--color-text-muted) focus:border-(--color-border-accent)"
         />
       </div>

@@ -46,7 +46,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
                 href={`/admin/birds/${bird.id}/edit`}
                 className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
               >
-                Editar ave
+                Editar ficha
               </Link>
 
               <Link
@@ -68,6 +68,8 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
             <PhotoGallery
               photos={bird.photos}
               showPhotoInfo
+              canSelectPhotos={isAdmin}
+              birdId={isAdmin ? bird.id : undefined}
               birdCommonName={bird.commonName}
               birdScientificName={bird.scientificName}
             />
@@ -87,42 +89,58 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
         </h2>
 
         <dl className="mt-5 space-y-5 text-sm leading-6">
+          <div>
+            <dt className="font-semibold text-(--color-text)">Familia</dt>
+            <dd className="mt-1 text-(--color-text-muted)">{bird.family}</dd>
+          </div>
           <div className="grid grid-cols-2 gap-6">
-            <div>
-              <dt className="font-semibold text-(--color-text)">Familia</dt>
-              <dd className="mt-1 text-(--color-text-muted)">{bird.family}</dd>
-            </div>
             <div>
               <dt className="font-semibold text-(--color-text)">Tamaño</dt>
               <dd className="mt-1 text-(--color-text-muted)">{bird.size}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-(--color-text)">Envergadura</dt>
+              <dd className="mt-1 text-(--color-text-muted)">
+                {bird.wingspan}
+              </dd>
             </div>
           </div>
 
           <div>
             <dt className="font-semibold text-(--color-text)">Hábitat</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.habitat}</dd>
+            <dd className="mt-1 text-(--color-text-muted)">
+              {bird.habitat ? bird.habitat : "N/A"}
+            </dd>
           </div>
 
           <div>
             <dt className="font-semibold text-(--color-text)">Alimentación</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.feeding}</dd>
+            <dd className="mt-1 text-(--color-text-muted)">
+              {bird.feeding ? bird.feeding : "N/A"}
+            </dd>
           </div>
 
           <div>
             <dt className="font-semibold text-(--color-text)">
               Comportamiento
             </dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.behavior}</dd>
+            <dd className="mt-1 text-(--color-text-muted)">
+              {bird.behavior ? bird.behavior : "N/A"}
+            </dd>
           </div>
 
           <div>
             <dt className="font-semibold text-(--color-text)">Reproducción</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.breeding}</dd>
+            <dd className="mt-1 text-(--color-text-muted)">
+              {bird.breeding ? bird.breeding : "N/A"}
+            </dd>
           </div>
 
           <div>
             <dt className="font-semibold text-(--color-text)">Geografía</dt>
-            <dd className="mt-1 text-(--color-text-muted)">{bird.geography}</dd>
+            <dd className="mt-1 text-(--color-text-muted)">
+              {bird.geography ? bird.geography : "N/A"}
+            </dd>
           </div>
         </dl>
       </aside>

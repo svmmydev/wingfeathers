@@ -10,6 +10,9 @@ import {
   type PointerEvent,
 } from "react";
 
+import { useRouter } from "next/navigation";
+import { deleteBirdPhotos } from "@/app/admin/birds/[birdId]/photos/actions";
+
 type Photo = {
   id: string;
   src: string;
@@ -22,6 +25,8 @@ type Photo = {
 
 type PhotoGalleryProps = {
   photos: Photo[];
+  birdId?: string;
+  canSelectPhotos?: boolean;
   showPhotoInfo?: boolean;
   showBirdLink?: boolean;
   birdCommonName?: string;
@@ -40,8 +45,10 @@ export function PhotoGallery({
   photos,
   showPhotoInfo = false,
   showBirdLink = false,
+  birdId,
   birdCommonName,
   birdScientificName,
+  canSelectPhotos = false,
 }: PhotoGalleryProps) {
   const [visiblePhotoCount, setVisiblePhotoCount] = useState(
     INITIAL_VISIBLE_PHOTOS,
@@ -85,9 +92,71 @@ export function PhotoGallery({
     ? "max-h-[78svh] max-lg:landscape:max-h-[92svh] lg:max-h-[82vh]"
     : "max-h-[78svh] max-lg:landscape:max-h-[92svh] lg:max-h-[90vh]";
 
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const router = useRouter();
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   function openPhoto(index: number) {
     setSelectedPhotoIndex(index);
     setSlideDirection(null);
+  }
+
+  function togglePhotoSelection(photoId: string) {
+    setSelectedPhotoIds((current) =>
+      current.includes(photoId)
+        ? current.filter((id) => id !== photoId)
+        : [...current, photoId],
+    );
+  }
+
+  function toggleSelectionMode() {
+    if (isSelectionMode) {
+      setSelectedPhotoIds([]);
+    }
+
+    setIsSelectionMode((current) => !current);
+  }
+
+  async function handleDeletePhotos() {
+    if (!birdId || selectedPhotoIds.length === 0 || isDeleting) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const { deletedIds, failedIds } = await deleteBirdPhotos(
+        birdId,
+        selectedPhotoIds,
+      );
+
+      setIsDeleteModalOpen(false);
+
+      if (deletedIds.length > 0) {
+        router.refresh();
+      }
+
+      if (failedIds.length > 0) {
+        setSelectedPhotoIds(failedIds);
+        setDeleteError(
+          `No se han podido eliminar ${failedIds.length} fotografías. Puedes volver a intentarlo.`,
+        );
+        return;
+      }
+
+      setSelectedPhotoIds([]);
+      setIsSelectionMode(false);
+    } catch (error) {
+      console.error("Error deleting photos:", error);
+      setIsDeleteModalOpen(false);
+      setDeleteError("Se ha producido un error al eliminar las fotografías.");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   const closePhoto = useCallback(() => {
@@ -240,23 +309,104 @@ export function PhotoGallery({
     };
   }, [isLightboxOpen, closePhoto, showPreviousPhoto, showNextPhoto]);
 
+  useEffect(() => {
+    if (!isDeleteModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isDeleting) {
+        setIsDeleteModalOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isDeleteModalOpen, isDeleting]);
+
   return (
     <section>
+      {canSelectPhotos && photos.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleSelectionMode}
+            className="inline-flex cursor-pointer rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+          >
+            {isSelectionMode ? "Cancelar" : "Seleccionar"}
+          </button>
+
+          {deleteError && (
+            <p role="alert" className="mb-4 text-sm text-red-300">
+              {deleteError}
+            </p>
+          )}
+
+          {isSelectionMode && (
+            <button
+              type="button"
+              disabled={selectedPhotoIds.length === 0}
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="inline-flex cursor-pointer rounded-md border border-red-800 bg-red-950/60 px-4 py-2 text-sm font-medium text-red-200 transition hover:border-red-600 hover:bg-red-950 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Eliminar ({selectedPhotoIds.length})
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {visiblePhotos.map((photo, index) => (
           <button
             key={photo.id}
             type="button"
-            onClick={() => openPhoto(index)}
-            className="cursor-pointer group overflow-hidden border-2 border-(--color-border)/60 bg-(--color-surface) shadow-lg shadow-black/30 transition hover:border-(--color-border-accent)"
+            onClick={() => {
+              if (isSelectionMode) {
+                togglePhotoSelection(photo.id);
+              } else {
+                openPhoto(index);
+              }
+            }}
+            aria-pressed={
+              isSelectionMode ? selectedPhotoIds.includes(photo.id) : undefined
+            }
+            className={`relative group cursor-pointer overflow-hidden border-2 bg-(--color-surface) shadow-lg shadow-black/30 transition hover:border-(--color-border-accent) ${
+              isSelectionMode && selectedPhotoIds.includes(photo.id)
+                ? "border-(--color-accent)"
+                : "border-(--color-border)/60"
+            }`}
           >
             <Image
               src={photo.src}
               alt={photo.alt}
               width={800}
               height={600}
-              className="aspect-4/3 w-full object-cover transition duration-300 group-hover:scale-102"
+              className={`aspect-4/3 w-full object-cover transition duration-300 ${
+                isSelectionMode
+                  ? selectedPhotoIds.includes(photo.id)
+                    ? "brightness-50"
+                    : "brightness-100"
+                  : "group-hover:scale-102"
+              }`}
             />
+
+            {isSelectionMode && (
+              <span
+                aria-hidden="true"
+                className={`absolute right-3 top-3 z-10 flex size-6 items-center justify-center rounded-full border-2 text-sm font-bold shadow-lg ${
+                  selectedPhotoIds.includes(photo.id)
+                    ? "border-white bg-red-800 text-white"
+                    : "border-white bg-black/50 text-white"
+                }`}
+              >
+                {selectedPhotoIds.includes(photo.id) ? "✕" : ""}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -401,6 +551,68 @@ export function PhotoGallery({
                   <span className="-translate-y-1 leading-none">›</span>
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (!isDeleting && event.target === event.currentTarget) {
+              setIsDeleteModalOpen(false);
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-photos-title"
+            aria-describedby="delete-photos-description"
+            className="w-full max-w-md rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 shadow-2xl shadow-black/50"
+          >
+            <h2
+              id="delete-photos-title"
+              className="text-xl font-semibold text-(--color-text)"
+            >
+              Eliminar fotografías
+            </h2>
+
+            <p
+              id="delete-photos-description"
+              className="mt-3 leading-7 text-(--color-text-muted)"
+            >
+              ¿Seguro que quieres eliminar las{" "}
+              <strong className="font-semibold text-(--color-text)">
+                {selectedPhotoIds.length}
+              </strong>{" "}
+              fotografías seleccionadas?
+            </p>
+
+            <p className="mt-2 text-sm text-red-300">
+              Esta acción es permanente y no se puede deshacer.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="inline-flex cursor-pointer rounded-md border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeletePhotos}
+                className="inline-flex cursor-pointer rounded-md border border-red-800 bg-red-950/60 px-4 py-2 text-sm font-medium text-red-200 transition hover:border-red-600 hover:bg-red-950 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+              </button>
             </div>
           </div>
         </div>

@@ -287,8 +287,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
 
         try {
           card = await createWebpVariant(bitmap, 1200, 0.82);
-
-          large = await createWebpVariant(bitmap, 2400, 0.9);
+          large = await createWebpVariant(bitmap, 2400, 0.95);
         } finally {
           bitmap.close();
         }

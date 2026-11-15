@@ -86,15 +86,29 @@ export default async function NewBirdPage({ searchParams }: NewBirdPageProps) {
             />
           </label>
 
-          <label className={labelClassName}>
-            Tamaño
-            <input
-              type="text"
-              name="size"
-              placeholder="45-50 cm.."
-              className={inputClassName}
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className={labelClassName}>
+              Tamaño
+              <input
+                type="text"
+                name="size"
+                placeholder="45-50 cm.."
+                required
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Envergadura
+              <input
+                type="text"
+                name="wingspan"
+                placeholder="90-110 cm.."
+                required
+                className={inputClassName}
+              />
+            </label>
+          </div>
         </div>
 
         <label className="flex justify-center cursor-pointer gap-3 text-sm font-medium text-(--color-text)">

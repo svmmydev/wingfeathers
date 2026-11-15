@@ -104,15 +104,31 @@ export default async function EditBirdPage({
             />
           </label>
 
-          <label className={labelClassName}>
-            Tamaño
-            <input
-              type="text"
-              name="size"
-              defaultValue={bird.size}
-              className={inputClassName}
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className={labelClassName}>
+              Tamaño
+              <input
+                type="text"
+                name="size"
+                defaultValue={bird.size}
+                placeholder="45-50"
+                required
+                className={inputClassName}
+              />
+            </label>
+
+            <label className={labelClassName}>
+              Envergadura
+              <input
+                type="text"
+                name="wingspan"
+                defaultValue={bird.wingspan}
+                placeholder="90-110"
+                required
+                className={inputClassName}
+              />
+            </label>
+          </div>
         </div>
 
         <label className="flex justify-center cursor-pointer gap-3 text-sm font-medium text-(--color-text)">

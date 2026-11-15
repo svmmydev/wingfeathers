@@ -30,6 +30,7 @@ type BirdRow = {
   behavior: string;
   breeding: string;
   size: string;
+  wingspan: string;
   photos: PhotoRow[];
 };
 
@@ -86,6 +87,7 @@ function mapBird(bird: BirdRow): Bird {
     behavior: bird.behavior,
     breeding: bird.breeding,
     size: bird.size,
+    wingspan: bird.wingspan,
     photos: bird.photos.map(mapPhoto).sort((firstPhoto, secondPhoto) => {
       return (
         new Date(secondPhoto.uploadedAt).getTime() -
@@ -115,6 +117,7 @@ export async function getBirds(): Promise<Bird[]> {
         behavior,
         breeding,
         size,
+        wingspan,
         photos (
           id,
           title,
@@ -158,6 +161,7 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
         behavior,
         breeding,
         size,
+        wingspan,
         photos (
           id,
           title,
@@ -206,6 +210,7 @@ export async function getBirdById(birdId: string): Promise<Bird | null> {
         behavior,
         breeding,
         size,
+        wingspan,
         photos (
           id,
           title,

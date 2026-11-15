@@ -23,6 +23,7 @@ export type Bird = {
   behavior: string;
   breeding: string;
   size: string;
+  wingspan: string;
   photos: BirdPhoto[];
 };
 

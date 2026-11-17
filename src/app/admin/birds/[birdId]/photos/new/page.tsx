@@ -47,7 +47,11 @@ export default async function NewBirdPhotoPage({
       </div>
 
       <div className="mt-8">
-        <PhotoUploadForm birdId={bird.id} birdSlug={bird.slug} />
+        <PhotoUploadForm
+          birdId={bird.id}
+          birdSlug={bird.slug}
+          existingPhotoCount={bird.photos.length}
+        />
       </div>
     </section>
   );

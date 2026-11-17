@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
 import { getBirdBySlug } from "@/lib/birds";
 import { isAuthenticated } from "@/lib/auth";
+import { MAX_PHOTOS_PER_BIRD } from "@/lib/constants";
 
 type BirdDetailPageProps = {
   params: Promise<{
@@ -21,6 +22,8 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
   if (!bird) {
     notFound();
   }
+
+  const isPhotoLimitReached = bird.photos.length >= MAX_PHOTOS_PER_BIRD;
 
   return (
     <section className="mx-auto grid max-w-6xl gap-8 px-8 py-16 lg:grid-cols-[1fr_340px]">
@@ -49,12 +52,23 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
                 Editar ficha
               </Link>
 
-              <Link
-                href={`/admin/birds/${bird.id}/photos/new`}
-                className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
-              >
-                Añadir foto
-              </Link>
+              {isPhotoLimitReached ? (
+                <button
+                  type="button"
+                  disabled
+                  title={`Máximo de ${MAX_PHOTOS_PER_BIRD} fotografías alcanzado`}
+                  className="inline-flex cursor-not-allowed rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) opacity-40"
+                >
+                  Añadir foto
+                </button>
+              ) : (
+                <Link
+                  href={`/admin/birds/${bird.id}/photos/new`}
+                  className="inline-flex rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+                >
+                  Añadir foto
+                </Link>
+              )}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getBirdById } from "@/lib/birds";
 import { createR2UploadUrl, deleteFromR2, getR2PublicUrl } from "@/lib/r2";
 import { createClient } from "@/lib/supabase/server";
+import { MAX_PHOTOS_PER_BIRD, PHOTO_FIELD_LIMITS } from "@/lib/constants";
 
 type SaveUploadedPhotoInput = {
   birdId: string;
@@ -45,11 +46,24 @@ export async function createPhotoUploadUrls(birdId: string) {
     throw new Error("El ave no existe.");
   }
 
+  if (bird.photos.length >= MAX_PHOTOS_PER_BIRD) {
+    throw new Error(
+      `El ave ya tiene el máximo de ${MAX_PHOTOS_PER_BIRD} fotografías.`,
+    );
+  }
+
   const photoId = randomUUID();
 
   const cardKey = `birds/${birdId}/${photoId}/card.webp`;
-
   const largeKey = `birds/${birdId}/${photoId}/large.webp`;
+
+  if (bird.photos.length >= MAX_PHOTOS_PER_BIRD) {
+    await cleanupR2Files(cardKey, largeKey);
+
+    throw new Error(
+      `El ave ya tiene el máximo de ${MAX_PHOTOS_PER_BIRD} fotografías.`,
+    );
+  }
 
   const [cardUploadUrl, largeUploadUrl] = await Promise.all([
     createR2UploadUrl(cardKey),
@@ -108,15 +122,30 @@ export async function saveUploadedPhoto(input: SaveUploadedPhotoInput) {
     throw new Error("El ave no existe.");
   }
 
-  const alt = input.alt.trim();
-
-  if (!alt) {
-    throw new Error("El texto alternativo es obligatorio.");
-  }
-
   const cardKey = `birds/${input.birdId}/${input.photoId}/card.webp`;
 
   const largeKey = `birds/${input.birdId}/${input.photoId}/large.webp`;
+
+  const alt = input.alt.trim();
+  const title = input.title.trim();
+  const camera = input.camera.trim();
+  const lens = input.lens.trim();
+
+  if (
+    !alt ||
+    alt.length > PHOTO_FIELD_LIMITS.alt ||
+    title.length > PHOTO_FIELD_LIMITS.title ||
+    camera.length > PHOTO_FIELD_LIMITS.camera ||
+    lens.length > PHOTO_FIELD_LIMITS.lens
+  ) {
+    await cleanupR2Files(cardKey, largeKey);
+
+    throw new Error(
+      !alt
+        ? "El texto alternativo es obligatorio."
+        : "Algún campo supera el límite de caracteres permitido.",
+    );
+  }
 
   const { error: photoError } = await supabase.from("photos").insert({
     id: input.photoId,

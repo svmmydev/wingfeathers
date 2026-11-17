@@ -12,16 +12,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { deleteBirdPhotos } from "@/app/admin/birds/[birdId]/photos/actions";
-
-type Photo = {
-  id: string;
-  src: string;
-  largeSrc?: string;
-  alt: string;
-  birdSlug?: string;
-  birdCommonName?: string;
-  birdScientificName?: string;
-};
+import { Photo } from "@/types/photo";
 
 type PhotoGalleryProps = {
   photos: Photo[];
@@ -89,7 +80,7 @@ export function PhotoGallery({
   const isLightboxOpen = selectedPhoto !== null;
 
   const lightboxImageSizeClass = shouldShowPhotoInfo
-    ? "max-h-[78svh] max-lg:landscape:max-h-[92svh] lg:max-h-[82vh]"
+    ? "max-h-[58svh] md:max-h-[68svh] lg:max-h-[72vh] max-lg:landscape:max-h-[92svh]"
     : "max-h-[78svh] max-lg:landscape:max-h-[92svh] lg:max-h-[90vh]";
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -456,7 +447,7 @@ export function PhotoGallery({
               )}
 
               <figure
-                className="flex w-fit max-w-full flex-col"
+                className="flex w-fit min-w-0 max-w-full flex-col"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="relative flex w-fit max-w-full items-center justify-center overflow-hidden">
@@ -511,25 +502,52 @@ export function PhotoGallery({
                 )}
 
                 {shouldShowPhotoInfo && (
-                  <figcaption className="mt-4 hidden w-full items-center justify-between gap-3 md:flex [@media_(max-width:900px)_and_(max-height:500px)]:hidden">
-                    <div className="min-w-0 text-left">
+                  <figcaption className="mt-4 flex w-full min-w-0 flex-col gap-4 contain-[inline-size] md:flex-row md:items-start max-lg:landscape:hidden">
+                    <div className="min-w-0 text-left md:max-w-[40%] md:shrink-0">
                       {selectedBirdCommonName && (
-                        <p className="truncate text-base font-semibold text-white sm:text-lg">
+                        <p className="text-lg font-semibold text-white">
                           {selectedBirdCommonName}
                         </p>
                       )}
 
                       {selectedBirdScientificName && (
-                        <p className="mt-1 truncate text-sm italic text-white/70">
+                        <p className="mt-1 text-sm italic text-white/60">
                           {selectedBirdScientificName}
                         </p>
                       )}
                     </div>
 
+                    {(selectedPhoto.title ||
+                      selectedPhoto.camera ||
+                      selectedPhoto.lens) && (
+                      <div className="min-w-0 text-left md:flex-1 md:self-stretch md:border-l md:border-white/15 md:pl-4">
+                        {selectedPhoto.title && (
+                          <p
+                            title={selectedPhoto.title}
+                            className="line-clamp-2 text-sm font-medium text-white/90 wrap-anywhere"
+                          >
+                            {selectedPhoto.title}
+                          </p>
+                        )}
+
+                        {selectedPhoto.camera && (
+                          <p className="mt-1 text-xs text-white/60">
+                            Cámara: {selectedPhoto.camera}
+                          </p>
+                        )}
+
+                        {selectedPhoto.lens && (
+                          <p className="mt-1 text-xs text-white/60">
+                            Objetivo: {selectedPhoto.lens}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {showBirdLink && selectedBirdSlug && (
                       <Link
                         href={`/birds/${selectedBirdSlug}`}
-                        className="inline-flex w-fit shrink-0 rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent)"
+                        className="hidden w-fit shrink-0 rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent) md:ml-auto md:inline-flex"
                       >
                         Ver ficha
                       </Link>

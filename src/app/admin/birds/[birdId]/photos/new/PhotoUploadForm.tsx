@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChangeEvent, SubmitEventHandler } from "react";
 import { useEffect, useRef, useState } from "react";
+import { MAX_PHOTOS_PER_BIRD, PHOTO_FIELD_LIMITS } from "@/lib/constants";
 
 import {
   cleanupUploadedPhoto,
@@ -15,6 +16,7 @@ import {
 type PhotoUploadFormProps = {
   birdId: string;
   birdSlug: string;
+  existingPhotoCount: number;
 };
 
 type PhotoItem = {
@@ -44,7 +46,11 @@ const inputClassName =
 
 const labelClassName = "text-md font-medium text-(--color-text)";
 
-export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
+export const PhotoUploadForm = ({
+  birdId,
+  birdSlug,
+  existingPhotoCount,
+}: PhotoUploadFormProps) => {
   const router = useRouter();
 
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -52,6 +58,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
   const [commonLens, setCommonLens] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [savedPhotoCount, setSavedPhotoCount] = useState(existingPhotoCount);
 
   const [uploadProgress, setUploadProgress] = useState<{
     current: number;
@@ -61,6 +68,11 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
   const previewUrlsRef = useRef<Set<string>>(new Set());
 
   const isMultiple = photos.length > 1;
+
+  const remainingSlots = Math.max(
+    0,
+    MAX_PHOTOS_PER_BIRD - savedPhotoCount - photos.length,
+  );
 
   useEffect(() => {
     const previewUrls = previewUrlsRef.current;
@@ -78,6 +90,14 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
     const selectedFiles = Array.from(event.target.files ?? []);
 
     if (selectedFiles.length === 0) {
+      return;
+    }
+
+    event.target.value = "";
+
+    if (selectedFiles.length > remainingSlots) {
+      setError(`Solo puedes añadir ${remainingSlots} fotografías más.`);
+
       return;
     }
 
@@ -348,6 +368,10 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
       console.error(error);
 
       if (uploadedPhotoIds.length > 0) {
+        setSavedPhotoCount(
+          (currentCount) => currentCount + uploadedPhotoIds.length,
+        );
+
         const uploadedIds = new Set(uploadedPhotoIds);
 
         for (const photo of photos) {
@@ -382,7 +406,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
           name="photos"
           accept="image/jpeg,image/png,image/webp"
           multiple
-          disabled={isUploading}
+          disabled={isUploading || remainingSlots === 0}
           onChange={handleFileChange}
           aria-label="Seleccionar fotografías"
           className="
@@ -410,7 +434,11 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
         />
 
         <p className="mt-4 text-sm text-(--color-text-muted)">
-          Puedes seleccionar una o varias imágenes.
+          Fotografías almacenadas: {savedPhotoCount} de {MAX_PHOTOS_PER_BIRD}.
+        </p>
+
+        <p className="mt-1 text-sm text-(--color-text-muted)">
+          Espacios disponibles: {remainingSlots}.
         </p>
       </div>
 
@@ -441,6 +469,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
               <input
                 type="text"
                 value={commonCamera}
+                maxLength={PHOTO_FIELD_LIMITS.camera}
                 disabled={isUploading}
                 placeholder="Canon EOS R5.."
                 onChange={(event) =>
@@ -455,6 +484,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
               <input
                 type="text"
                 value={commonLens}
+                maxLength={PHOTO_FIELD_LIMITS.lens}
                 disabled={isUploading}
                 placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
                 onChange={(event) => handleCommonLensChange(event.target.value)}
@@ -496,6 +526,24 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
 
           <div className="grid content-start gap-5">
             <label className={labelClassName}>
+              Título
+              <input
+                type="text"
+                value={photos[0].title}
+                maxLength={PHOTO_FIELD_LIMITS.title}
+                disabled={isUploading}
+                placeholder="Calamón común en la marisma.."
+                onChange={(event) =>
+                  updatePhotoText(photos[0].id, "title", event.target.value)
+                }
+                className={inputClassName}
+              />
+              <span className="mt-1 block text-right text-xs font-normal text-(--color-text-muted)">
+                {photos[0].title.length} / {PHOTO_FIELD_LIMITS.title}
+              </span>
+            </label>
+
+            <label className={labelClassName}>
               Texto alternativo
               <input
                 type="text"
@@ -511,24 +559,11 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
             </label>
 
             <label className={labelClassName}>
-              Título
-              <input
-                type="text"
-                value={photos[0].title}
-                disabled={isUploading}
-                placeholder="Calamón común en la marisma.."
-                onChange={(event) =>
-                  updatePhotoText(photos[0].id, "title", event.target.value)
-                }
-                className={inputClassName}
-              />
-            </label>
-
-            <label className={labelClassName}>
               Cámara
               <input
                 type="text"
                 value={photos[0].camera}
+                maxLength={PHOTO_FIELD_LIMITS.camera}
                 disabled={isUploading}
                 placeholder="Canon EOS R5.."
                 onChange={(event) =>
@@ -580,18 +615,16 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
 
               <div className="space-y-5 md:col-span-2">
                 <div className="flex items-start justify-between gap-4">
-                  <p className="font-medium text-(--color-text)">
-                    Fotografía {index + 1}
-                  </p>
-
-                  <button
-                    type="button"
-                    disabled={isUploading}
-                    onClick={() => removePhoto(photo.id)}
-                    className="cursor-pointer text-sm text-(--color-text-muted) transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Quitar
-                  </button>
+                  <div className="flex w-full items-center">
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => removePhoto(photo.id)}
+                      className="ml-auto cursor-pointer text-sm text-(--color-text-muted) transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Quitar
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2">
@@ -600,6 +633,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
                     <input
                       type="text"
                       value={photo.alt}
+                      maxLength={PHOTO_FIELD_LIMITS.alt}
                       required
                       disabled={isUploading}
                       placeholder="Calamón común caminando entre vegetación.."
@@ -615,6 +649,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
                     <input
                       type="text"
                       value={photo.title}
+                      maxLength={PHOTO_FIELD_LIMITS.title}
                       disabled={isUploading}
                       placeholder="Calamón común en la marisma.."
                       onChange={(event) =>
@@ -622,6 +657,9 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
                       }
                       className={inputClassName}
                     />
+                    <span className="mt-1 block text-right text-xs font-normal text-(--color-text-muted)">
+                      {photo.title.length} / {PHOTO_FIELD_LIMITS.title}
+                    </span>
                   </label>
 
                   <div>
@@ -643,6 +681,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
                     <input
                       type="text"
                       value={photo.camera}
+                      maxLength={PHOTO_FIELD_LIMITS.camera}
                       disabled={isUploading}
                       placeholder="Canon EOS R5.."
                       aria-label={`Cámara de la fotografía ${index + 1}`}
@@ -672,6 +711,7 @@ export const PhotoUploadForm = ({ birdId, birdSlug }: PhotoUploadFormProps) => {
                     <input
                       type="text"
                       value={photo.lens}
+                      maxLength={PHOTO_FIELD_LIMITS.lens}
                       disabled={isUploading}
                       placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
                       aria-label={`Objetivo de la fotografía ${index + 1}`}

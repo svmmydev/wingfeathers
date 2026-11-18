@@ -83,6 +83,7 @@ export default async function BirdDetailPage({ params }: BirdDetailPageProps) {
               photos={bird.photos}
               showPhotoInfo
               canSelectPhotos={isAdmin}
+              canEditPhotos={isAdmin}
               birdId={isAdmin ? bird.id : undefined}
               birdCommonName={bird.commonName}
               birdScientificName={bird.scientificName}

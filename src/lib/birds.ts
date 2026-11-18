@@ -1,55 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Bird, BirdPhoto, HomePhoto } from "@/types/birds";
-
-type PhotoVariantRow = {
-  variant_type: "card" | "large";
-  public_url: string;
-};
-
-type PhotoRow = {
-  id: string;
-  title: string | null;
-  alt: string;
-  camera: string;
-  lens: string;
-  uploaded_at: string;
-  photo_variants: PhotoVariantRow[];
-};
-
-type BirdRow = {
-  id: string;
-  slug: string;
-  common_name: string;
-  scientific_name: string;
-  family: string;
-  is_native: boolean;
-  geography: string;
-  description: string;
-  habitat: string;
-  feeding: string;
-  behavior: string;
-  breeding: string;
-  size: string;
-  wingspan: string;
-  photos: PhotoRow[];
-};
-
-type HomeBirdRow = {
-  slug: string;
-  common_name: string;
-  scientific_name: string;
-};
-
-type HomePhotoRow = {
-  id: string;
-  title: string | null;
-  alt: string;
-  camera: string;
-  lens: string;
-  uploaded_at: string;
-  photo_variants: PhotoVariantRow[];
-  bird: HomeBirdRow | HomeBirdRow[] | null;
-};
+import type {
+  Bird,
+  BirdPhoto,
+  BirdRow,
+  HomeBirdRow,
+  HomePhoto,
+  HomePhotoRow,
+  PhotoRow,
+} from "@/types/birds";
 
 function mapPhoto(photo: PhotoRow): BirdPhoto {
   const cardVariant = photo.photo_variants.find(
@@ -260,6 +218,7 @@ function mapHomePhoto(photo: HomePhotoRow): HomePhoto {
 
   return {
     id: photo.id,
+    birdId: photo.bird_id,
     title: photo.title ?? undefined,
     src: cardVariant?.public_url ?? largeVariant?.public_url ?? "",
     largeSrc: largeVariant?.public_url ?? cardVariant?.public_url,
@@ -281,6 +240,7 @@ export async function getHomePhotos(): Promise<HomePhoto[]> {
     .select(
       `
         id,
+        bird_id,
         title,
         alt,
         camera,

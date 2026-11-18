@@ -1,9 +1,13 @@
 import Image from "next/image";
 import { getHomePhotos } from "@/lib/birds";
 import { PhotoGallery } from "@/components/gallery/PhotoGallery";
+import { isAuthenticated } from "@/lib/auth";
 
 export default async function HomePage() {
-  const homePhotos = await getHomePhotos();
+  const [homePhotos, isAdmin] = await Promise.all([
+    getHomePhotos(),
+    isAuthenticated(),
+  ]);
 
   return (
     <section className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-16">
@@ -60,7 +64,12 @@ export default async function HomePage() {
           </h2>
         </div>
 
-        <PhotoGallery photos={homePhotos} showPhotoInfo showBirdLink />
+        <PhotoGallery
+          photos={homePhotos}
+          showPhotoInfo
+          showBirdLink
+          canEditPhotos={isAdmin}
+        />
       </section>
     </section>
   );

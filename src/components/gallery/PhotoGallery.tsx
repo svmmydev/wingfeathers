@@ -9,10 +9,13 @@ import {
   useState,
   type PointerEvent,
 } from "react";
-
 import { useRouter } from "next/navigation";
-import { deleteBirdPhotos } from "@/app/admin/birds/[birdId]/photos/actions";
+import {
+  deleteBirdPhotos,
+  updatePhoto,
+} from "@/app/admin/birds/[birdId]/photos/actions";
 import { Photo } from "@/types/photo";
+import { PHOTO_FIELD_LIMITS } from "@/lib/constants";
 
 type PhotoGalleryProps = {
   photos: Photo[];
@@ -22,6 +25,7 @@ type PhotoGalleryProps = {
   showBirdLink?: boolean;
   birdCommonName?: string;
   birdScientificName?: string;
+  canEditPhotos?: boolean;
 };
 
 type SlideDirection = "previous" | "next" | null;
@@ -40,6 +44,7 @@ export function PhotoGallery({
   birdCommonName,
   birdScientificName,
   canSelectPhotos = false,
+  canEditPhotos = false,
 }: PhotoGalleryProps) {
   const [visiblePhotoCount, setVisiblePhotoCount] = useState(
     INITIAL_VISIBLE_PHOTOS,
@@ -55,6 +60,7 @@ export function PhotoGallery({
 
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
+  const editDialogRef = useRef<HTMLDialogElement | null>(null);
 
   const visiblePhotos = photos.slice(0, visiblePhotoCount);
   const hasMorePhotos = visiblePhotoCount < photos.length;
@@ -64,6 +70,8 @@ export function PhotoGallery({
     selectedPhotoIndex === null
       ? null
       : (visiblePhotos[selectedPhotoIndex] ?? null);
+
+  const selectedPhotoBirdId = selectedPhoto?.birdId ?? birdId;
 
   const selectedBirdCommonName =
     selectedPhoto?.birdCommonName ?? birdCommonName;
@@ -91,6 +99,17 @@ export function PhotoGallery({
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const [editPhoto, setEditPhoto] = useState({
+    title: "",
+    alt: "",
+    camera: "",
+    lens: "",
+  });
 
   function openPhoto(index: number) {
     setSelectedPhotoIndex(index);
@@ -147,6 +166,48 @@ export function PhotoGallery({
       setDeleteError("Se ha producido un error al eliminar las fotografías.");
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  function openEditModal() {
+    if (!selectedPhoto) return;
+
+    setEditPhoto({
+      title: selectedPhoto.title ?? "",
+      alt: selectedPhoto.alt,
+      camera: selectedPhoto.camera ?? "",
+      lens: selectedPhoto.lens ?? "",
+    });
+
+    setEditError(null);
+    setIsEditModalOpen(true);
+  }
+
+  async function handleUpdatePhoto() {
+    if (!selectedPhotoBirdId || !selectedPhoto || isSavingPhoto) return;
+
+    setIsSavingPhoto(true);
+    setEditError(null);
+
+    try {
+      const result = await updatePhoto({
+        birdId: selectedPhotoBirdId,
+        photoId: selectedPhoto.id,
+        ...editPhoto,
+      });
+
+      if (result.error) {
+        setEditError(result.error);
+        return;
+      }
+
+      setIsEditModalOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating photo:", error);
+      setEditError("No se ha podido actualizar la fotografía.");
+    } finally {
+      setIsSavingPhoto(false);
     }
   }
 
@@ -277,7 +338,7 @@ export function PhotoGallery({
   }, [isLightboxOpen]);
 
   useEffect(() => {
-    if (!isLightboxOpen) return;
+    if (!isLightboxOpen || isEditModalOpen) return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -298,7 +359,13 @@ export function PhotoGallery({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isLightboxOpen, closePhoto, showPreviousPhoto, showNextPhoto]);
+  }, [
+    isLightboxOpen,
+    isEditModalOpen,
+    closePhoto,
+    showPreviousPhoto,
+    showNextPhoto,
+  ]);
 
   useEffect(() => {
     if (!isDeleteModalOpen) return;
@@ -319,6 +386,18 @@ export function PhotoGallery({
       window.removeEventListener("keydown", handleEscape);
     };
   }, [isDeleteModalOpen, isDeleting]);
+
+  useEffect(() => {
+    const dialog = editDialogRef.current;
+
+    if (!dialog) return;
+
+    if (isEditModalOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!isEditModalOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [isEditModalOpen]);
 
   return (
     <section>
@@ -420,7 +499,7 @@ export function PhotoGallery({
               event.stopPropagation();
               closePhoto();
             }}
-            className="absolute right-4 top-4 z-20 rounded-full border-2 border-(--color-border) bg-black/60 px-4 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
+            className="cursor-pointer absolute right-4 top-4 z-20 rounded-full border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent) md:right-6 md:top-6"
           >
             Cerrar
           </button>
@@ -552,6 +631,16 @@ export function PhotoGallery({
                         Ver ficha
                       </Link>
                     )}
+
+                    {canEditPhotos && selectedPhotoBirdId && (
+                      <button
+                        type="button"
+                        onClick={openEditModal}
+                        className="cursor-pointer hidden w-fit shrink-0 rounded-xl border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-white transition hover:border-(--color-border-accent) hover:text-(--color-accent) md:ml-auto md:inline-flex"
+                      >
+                        Editar
+                      </button>
+                    )}
                   </figcaption>
                 )}
               </figure>
@@ -635,6 +724,107 @@ export function PhotoGallery({
           </div>
         </div>
       )}
+
+      <dialog
+        ref={editDialogRef}
+        aria-labelledby="edit-photo-title"
+        onCancel={(event) => {
+          event.preventDefault();
+
+          if (!isSavingPhoto) {
+            setIsEditModalOpen(false);
+          }
+        }}
+        onClick={(event) => {
+          if (!isSavingPhoto && event.target === event.currentTarget) {
+            setIsEditModalOpen(false);
+          }
+        }}
+        className="m-auto max-h-[90svh] w-11/12 max-w-lg overflow-y-auto rounded-2xl border border-(--color-border) bg-(--color-background) p-0 shadow-2xl shadow-black/50 backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleUpdatePhoto();
+          }}
+          className="p-6"
+        >
+          <h2
+            id="edit-photo-title"
+            className="text-xl font-semibold text-(--color-text)"
+          >
+            Editar fotografía
+          </h2>
+
+          <p className="mt-3 text-sm text-(--color-text-muted)">
+            Modifica la información asociada a esta fotografía.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-4">
+            {(
+              [
+                { key: "title", label: "Título" },
+                { key: "alt", label: "Texto alternativo *" },
+                { key: "camera", label: "Cámara" },
+                { key: "lens", label: "Objetivo" },
+              ] as const
+            ).map(({ key, label }) => (
+              <label
+                key={key}
+                className="block text-sm font-medium text-(--color-text)"
+              >
+                {label}
+
+                <input
+                  type="text"
+                  value={editPhoto[key]}
+                  maxLength={PHOTO_FIELD_LIMITS[key]}
+                  required={key === "alt"}
+                  disabled={isSavingPhoto}
+                  onChange={(event) =>
+                    setEditPhoto((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-md border border-(--color-border) bg-(--color-button-background) px-3 py-2 text-sm text-(--color-text) outline-none transition focus:border-(--color-border-accent) disabled:opacity-50"
+                />
+
+                {key === "title" && (
+                  <span className="mt-1 block text-right text-xs font-normal text-(--color-text-muted)">
+                    {editPhoto.title.length} / {PHOTO_FIELD_LIMITS.title}
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+
+          {editError && (
+            <p role="alert" className="mt-4 text-sm text-red-300">
+              {editError}
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <button
+              type="button"
+              disabled={isSavingPhoto}
+              onClick={() => setIsEditModalOpen(false)}
+              className="inline-flex cursor-pointer rounded-md border border-(--color-border) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              disabled={isSavingPhoto}
+              className="inline-flex cursor-pointer rounded-md border border-(--color-border) bg-(--color-button-background) px-4 py-2 text-sm font-medium text-(--color-text) transition hover:border-(--color-border-accent) hover:text-(--color-text) disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isSavingPhoto ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+        </form>
+      </dialog>
     </section>
   );
 }

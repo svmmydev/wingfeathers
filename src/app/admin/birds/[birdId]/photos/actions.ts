@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getBirdById } from "@/lib/birds";
 import { deleteFromR2 } from "@/lib/r2";
 import { createClient } from "@/lib/supabase/server";
+import { PHOTO_FIELD_LIMITS } from "@/lib/constants";
+import { UpdatePhotoInput } from "@/types/photo";
 
 export async function deleteBirdPhotos(birdId: string, photoIds: string[]) {
   const supabase = await createClient();
@@ -79,4 +81,67 @@ export async function deleteBirdPhotos(birdId: string, photoIds: string[]) {
   }
 
   return { deletedIds, failedIds };
+}
+
+export async function updatePhoto(input: UpdatePhotoInput) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "No autorizado." };
+  }
+
+  const bird = await getBirdById(input.birdId);
+
+  if (!bird) {
+    return { error: "El ave no existe." };
+  }
+
+  const title = input.title.trim();
+  const alt = input.alt.trim();
+  const camera = input.camera.trim();
+  const lens = input.lens.trim();
+
+  if (!alt) {
+    return { error: "El texto alternativo es obligatorio." };
+  }
+
+  if (
+    title.length > PHOTO_FIELD_LIMITS.title ||
+    alt.length > PHOTO_FIELD_LIMITS.alt ||
+    camera.length > PHOTO_FIELD_LIMITS.camera ||
+    lens.length > PHOTO_FIELD_LIMITS.lens
+  ) {
+    return {
+      error: "Algún campo supera el límite de caracteres permitido.",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("photos")
+    .update({
+      title: title || null,
+      alt,
+      camera,
+      lens,
+    })
+    .eq("id", input.photoId)
+    .eq("bird_id", input.birdId)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      error: "No se ha podido actualizar la fotografía.",
+    };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/birds");
+  revalidatePath(`/birds/${bird.slug}`);
+
+  return { error: null };
 }

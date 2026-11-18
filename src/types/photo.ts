@@ -6,7 +6,17 @@ export type Photo = {
   title?: string;
   camera?: string;
   lens?: string;
+  birdId?: string;
   birdSlug?: string;
   birdCommonName?: string;
   birdScientificName?: string;
+};
+
+export type UpdatePhotoInput = {
+  birdId: string;
+  photoId: string;
+  title: string;
+  alt: string;
+  camera: string;
+  lens: string;
 };

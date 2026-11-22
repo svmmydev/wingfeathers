@@ -1,7 +1,7 @@
 import "server-only";
-
 import {
   DeleteObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -57,4 +57,34 @@ function getRequiredEnv(name: string): string {
   }
 
   return value;
+}
+
+export async function getR2StorageUsage() {
+  let usedBytes = 0;
+  let objectCount = 0;
+  let continuationToken: string | undefined;
+
+  do {
+    const result = await r2Client.send(
+      new ListObjectsV2Command({
+        Bucket: bucketName,
+        ContinuationToken: continuationToken,
+      }),
+    );
+
+    for (const object of result.Contents ?? []) {
+      usedBytes += object.Size ?? 0;
+      objectCount++;
+    }
+
+    if (result.IsTruncated && !result.NextContinuationToken) {
+      throw new Error("No se pudo obtener todo el almacenamiento de R2.");
+    }
+
+    continuationToken = result.IsTruncated
+      ? result.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+
+  return { usedBytes, objectCount };
 }

@@ -5,7 +5,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const endpoint = getRequiredEnv("R2_ENDPOINT");
 const accessKeyId = getRequiredEnv("R2_ACCESS_KEY_ID");
@@ -21,20 +20,6 @@ const r2Client = new S3Client({
     secretAccessKey,
   },
 });
-
-export async function createR2UploadUrl(key: string) {
-  return getSignedUrl(
-    r2Client,
-    new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      ContentType: "image/webp",
-    }),
-    {
-      expiresIn: 300,
-    },
-  );
-}
 
 export function getR2PublicUrl(key: string) {
   return `${publicUrl.replace(/\/+$/, "")}/${key}`;
@@ -87,4 +72,15 @@ export async function getR2StorageUsage() {
   } while (continuationToken);
 
   return { usedBytes, objectCount };
+}
+
+export async function uploadToR2(key: string, data: Uint8Array) {
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: data,
+      ContentType: "image/webp",
+    }),
+  );
 }

@@ -5,11 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChangeEvent, SubmitEventHandler } from "react";
 import { useEffect, useRef, useState } from "react";
-import { MAX_PHOTOS_PER_BIRD, PHOTO_FIELD_LIMITS } from "@/lib/constants";
+
+import {
+  MAX_PHOTOS_PER_BIRD,
+  PHOTO_FIELD_LIMITS,
+  MAX_WEBP_VARIANT_SIZE,
+} from "@/lib/constants";
 
 import {
   cleanupUploadedPhoto,
-  createPhotoUploadUrls,
+  preparePhotoUpload,
   saveUploadedPhoto,
 } from "./actions";
 
@@ -97,7 +102,6 @@ export const PhotoUploadForm = ({
 
     if (selectedFiles.length > remainingSlots) {
       setError(`Solo puedes añadir ${remainingSlots} fotografías más.`);
-
       return;
     }
 
@@ -312,30 +316,29 @@ export const PhotoUploadForm = ({
           bitmap.close();
         }
 
-        const upload = await createPhotoUploadUrls(birdId);
+        if (
+          card.blob.size > MAX_WEBP_VARIANT_SIZE ||
+          large.blob.size > MAX_WEBP_VARIANT_SIZE
+        ) {
+          throw new Error(
+            "Una de las variantes WebP supera los 4 MiB permitidos.",
+          );
+        }
 
-        const [cardResponse, largeResponse] = await Promise.all([
-          fetch(upload.card.uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "image/webp",
-            },
-            body: card.blob,
-          }),
+        const upload = await preparePhotoUpload(birdId);
 
-          fetch(upload.large.uploadUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "image/webp",
-            },
-            body: large.blob,
-          }),
+        const results = await Promise.allSettled([
+          uploadWebpVariant(birdId, upload.photoId, "card", card.blob),
+          uploadWebpVariant(birdId, upload.photoId, "large", large.blob),
         ]);
 
-        if (!cardResponse.ok || !largeResponse.ok) {
-          await cleanupUploadedPhoto(birdId, upload.photoId);
+        const failedUpload = results.find(
+          (result) => result.status === "rejected",
+        );
 
-          throw new Error("No se han podido subir las imágenes a R2.");
+        if (failedUpload?.status === "rejected") {
+          await cleanupUploadedPhoto(birdId, upload.photoId);
+          throw failedUpload.reason;
         }
 
         await saveUploadedPhoto({
@@ -367,6 +370,11 @@ export const PhotoUploadForm = ({
     } catch (error) {
       console.error(error);
 
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "No se han podido subir las fotografías.";
+
       if (uploadedPhotoIds.length > 0) {
         setSavedPhotoCount(
           (currentCount) => currentCount + uploadedPhotoIds.length,
@@ -385,10 +393,11 @@ export const PhotoUploadForm = ({
         );
 
         setError(
-          `Se han subido ${uploadedPhotoIds.length} de ${photos.length} fotografías. Las restantes siguen pendientes.`,
+          `Se han subido ${uploadedPhotoIds.length} de ${photos.length} fotografías. ` +
+            `Las restantes siguen pendientes. ${errorMessage}`,
         );
       } else {
-        setError("No se han podido subir las fotografías.");
+        setError(errorMessage);
       }
     } finally {
       setIsUploading(false);
@@ -548,6 +557,7 @@ export const PhotoUploadForm = ({
               <input
                 type="text"
                 value={photos[0].alt}
+                maxLength={PHOTO_FIELD_LIMITS.alt}
                 required
                 disabled={isUploading}
                 placeholder="Calamón común caminando entre vegetación.."
@@ -578,6 +588,7 @@ export const PhotoUploadForm = ({
               <input
                 type="text"
                 value={photos[0].lens}
+                maxLength={PHOTO_FIELD_LIMITS.lens}
                 disabled={isUploading}
                 placeholder="RF 100-500mm F4.5-7.1 L IS USM.."
                 onChange={(event) =>
@@ -769,7 +780,6 @@ async function createWebpVariant(
   const scale = Math.min(1, maxSize / Math.max(source.width, source.height));
 
   const width = Math.round(source.width * scale);
-
   const height = Math.round(source.height * scale);
 
   const canvas = document.createElement("canvas");
@@ -798,4 +808,36 @@ async function createWebpVariant(
     width,
     height,
   };
+}
+
+async function uploadWebpVariant(
+  birdId: string,
+  photoId: string,
+  variant: "card" | "large",
+  blob: Blob,
+) {
+  const params = new URLSearchParams({
+    birdId,
+    photoId,
+    variant,
+  });
+
+  const response = await fetch(
+    `/api/admin/photos/upload?${params.toString()}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "image/webp",
+      },
+      body: blob,
+    },
+  );
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => null);
+
+    throw new Error(
+      result?.error ?? `Error al subir la imagen (${response.status}).`,
+    );
+  }
 }

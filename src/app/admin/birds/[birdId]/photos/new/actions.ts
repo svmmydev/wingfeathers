@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 
 import { getBirdById } from "@/lib/birds";
-import { createR2UploadUrl, deleteFromR2, getR2PublicUrl } from "@/lib/r2";
+import { deleteFromR2, getR2PublicUrl } from "@/lib/r2";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_PHOTOS_PER_BIRD, PHOTO_FIELD_LIMITS } from "@/lib/constants";
 
@@ -29,7 +29,7 @@ type SaveUploadedPhotoInput = {
   };
 };
 
-export async function createPhotoUploadUrls(birdId: string) {
+export async function preparePhotoUpload(birdId: string) {
   const supabase = await createClient();
 
   const {
@@ -52,38 +52,8 @@ export async function createPhotoUploadUrls(birdId: string) {
     );
   }
 
-  const photoId = randomUUID();
-
-  const cardKey = `birds/${birdId}/${photoId}/card.webp`;
-  const largeKey = `birds/${birdId}/${photoId}/large.webp`;
-
-  if (bird.photos.length >= MAX_PHOTOS_PER_BIRD) {
-    await cleanupR2Files(cardKey, largeKey);
-
-    throw new Error(
-      `El ave ya tiene el máximo de ${MAX_PHOTOS_PER_BIRD} fotografías.`,
-    );
-  }
-
-  const [cardUploadUrl, largeUploadUrl] = await Promise.all([
-    createR2UploadUrl(cardKey),
-    createR2UploadUrl(largeKey),
-  ]);
-
   return {
-    photoId,
-
-    card: {
-      key: cardKey,
-      uploadUrl: cardUploadUrl,
-      publicUrl: getR2PublicUrl(cardKey),
-    },
-
-    large: {
-      key: largeKey,
-      uploadUrl: largeUploadUrl,
-      publicUrl: getR2PublicUrl(largeKey),
-    },
+    photoId: randomUUID(),
   };
 }
 
